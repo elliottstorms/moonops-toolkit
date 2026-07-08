@@ -1,0 +1,48 @@
+/* MoonOps Design Tokens — extracted from the live moonops.org (2026-07-06).
+   Single source of truth. Import this file or copy the :root block.
+   Rule: never hardcode these values in a component; always use the variable. */
+
+:root {
+  /* ---- color ---- */
+  --ink: #0d162a;        /* page background — deep navy, never pure black */
+  --card: #16224a;       /* raised surfaces: cards, panels, nav */
+  --cream: #f6f0eb;      /* primary text — warm, never pure white */
+  --steel: #92a2c4;      /* secondary text, labels, muted UI */
+  --purple: #b95cff;     /* brand accent — links, primary actions, highlights */
+  --green: #4aff9e;      /* success / live / "go" accent — use sparingly */
+  --amber: #ffc86b;      /* warnings, "needs attention" (derived, harmonizes with cream) */
+  --rose: #ff6b8a;       /* failures, blockers (derived; not on the live site yet) */
+
+  /* ---- type ---- */
+  --font-display: 'Poppins', sans-serif;      /* headings, hero, buttons */
+  --font-mono: 'JetBrains Mono', monospace;   /* eyebrows, labels, code, data */
+  --font-serif: Georgia, serif;               /* pull quotes / testimonials only */
+
+  /* ---- rhythm ---- */
+  --radius: 14px;        /* cards and buttons share one radius */
+  --radius-pill: 999px;  /* chips, badges, status pills */
+  --gap: 20px;           /* default component gap */
+  --pad-card: 22px;      /* card interior padding */
+  --shadow: 0 10px 30px rgba(0, 0, 0, .35);
+
+  /* ---- motion ---- */
+  --lift: translateY(-3px);         /* standard hover lift */
+  --ease: .18s ease;                /* one duration, one easing, everywhere */
+}
+
+/* Base surface — every MoonOps page starts here */
+.mo-base {
+  background: var(--ink);
+  color: var(--cream);
+  font-family: var(--font-display);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* The mono "eyebrow" label — MoonOps' most recognizable cue */
+.mo-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: .12em;
+  color: var(--purple);
+}
+.mo-eyebrow::before { content: "// "; color: var(--steel); }

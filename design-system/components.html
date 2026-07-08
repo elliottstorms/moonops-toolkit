@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MoonOps Components — living demo</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+/* ============ tokens (inlined so this file is self-contained; canonical copy: tokens.css) ============ */
+:root{
+  --ink:#0d162a; --card:#16224a; --cream:#f6f0eb; --steel:#92a2c4;
+  --purple:#b95cff; --green:#4aff9e; --amber:#ffc86b; --rose:#ff6b8a;
+  --font-display:'Poppins',sans-serif; --font-mono:'JetBrains Mono',monospace;
+  --radius:14px; --radius-pill:999px; --gap:20px; --pad-card:22px;
+  --shadow:0 10px 30px rgba(0,0,0,.35); --lift:translateY(-3px); --ease:.18s ease;
+}
+*{box-sizing:border-box;margin:0}
+body{background:var(--ink);color:var(--cream);font-family:var(--font-display);padding:48px 24px;max-width:1080px;margin:0 auto}
+section{margin-bottom:56px}
+h1{font-size:34px;font-weight:700;margin-bottom:6px}
+h2{font-size:20px;font-weight:600;margin:0 0 16px}
+.demo-note{color:var(--steel);font-size:14px;margin-bottom:28px}
+
+/* ============ eyebrow ============ */
+.eyebrow{font-family:var(--font-mono);font-size:12px;letter-spacing:.12em;color:var(--purple);display:block;margin-bottom:10px}
+.eyebrow::before{content:"// ";color:var(--steel)}
+
+/* ============ moon mark ============ */
+.moon{display:inline-block;width:22px;height:22px;border-radius:50%;background:var(--cream);box-shadow:7px 0 0 0 var(--ink) inset;vertical-align:-4px;margin-right:10px}
+
+/* ============ nav ============ */
+.nav{display:flex;align-items:center;gap:22px;background:var(--card);border-radius:var(--radius);padding:14px 22px;box-shadow:var(--shadow)}
+.nav .brand{font-weight:700;margin-right:auto}
+.nav a{color:var(--steel);text-decoration:none;font-size:14px;transition:color var(--ease)}
+.nav a:hover{color:var(--cream)}
+.nav a.active{color:var(--purple)}
+
+/* ============ buttons ============ */
+.btn{display:inline-block;font-family:var(--font-display);font-weight:600;font-size:14px;border-radius:var(--radius-pill);padding:11px 22px;cursor:pointer;text-decoration:none;border:1px solid transparent;transition:transform var(--ease),box-shadow var(--ease)}
+.btn:hover{transform:var(--lift);box-shadow:var(--shadow)}
+.btn-primary{background:var(--purple);color:var(--ink)}
+.btn-go{background:var(--green);color:var(--ink)}
+.btn-ghost{background:transparent;color:var(--cream);border-color:var(--steel)}
+
+/* ============ card ============ */
+.card{background:var(--card);border-radius:var(--radius);padding:var(--pad-card);box-shadow:var(--shadow);transition:transform var(--ease)}
+.card:hover{transform:var(--lift)}
+.card h3{font-size:16px;margin:0 0 8px}
+.card p{color:var(--steel);font-size:14px;line-height:1.55}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:var(--gap)}
+
+/* ============ status pills ============ */
+.pill{display:inline-block;font-family:var(--font-mono);font-size:11px;letter-spacing:.06em;border-radius:var(--radius-pill);padding:4px 12px}
+.pill-live{background:rgba(74,255,158,.14);color:var(--green)}
+.pill-warn{background:rgba(255,200,107,.14);color:var(--amber)}
+.pill-block{background:rgba(255,107,138,.14);color:var(--rose)}
+.pill-info{background:rgba(185,92,255,.14);color:var(--purple)}
+
+/* ============ task row ============ */
+.task{display:flex;gap:12px;align-items:flex-start;padding:12px 14px;border-radius:10px;background:rgba(255,255,255,.025)}
+.task + .task{margin-top:8px}
+.task .box{width:16px;height:16px;border-radius:5px;border:1.5px solid var(--steel);flex:none;margin-top:2px}
+.task.done .box{background:var(--green);border-color:var(--green)}
+.task.done .label{color:var(--steel);text-decoration:line-through}
+.task .label{font-size:14px;line-height:1.5}
+
+/* ============ progress ============ */
+.bar{height:8px;border-radius:var(--radius-pill);background:rgba(255,255,255,.08);overflow:hidden}
+.bar > i{display:block;height:100%;background:linear-gradient(90deg,var(--purple),var(--green))}
+
+/* ============ data table ============ */
+table{width:100%;border-collapse:collapse;font-size:14px}
+th{font-family:var(--font-mono);font-size:11px;letter-spacing:.08em;color:var(--steel);text-align:left;padding:10px 12px;border-bottom:1px solid rgba(255,255,255,.1)}
+td{padding:12px;border-bottom:1px solid rgba(255,255,255,.05)}
+
+/* ============ stat ============ */
+.stat{text-align:center}
+.stat .n{font-size:34px;font-weight:700;color:var(--purple)}
+.stat .l{font-family:var(--font-mono);font-size:11px;letter-spacing:.08em;color:var(--steel)}
+</style>
+</head>
+<body>
+<h1><span class="moon"></span>MoonOps Components</h1>
+<p class="demo-note">Living demo. Copy any block; tokens are canonical in <code>tokens.css</code>. Rules in <code>README.md</code>.</p>
+
+<section><span class="eyebrow">nav</span>
+  <nav class="nav"><span class="brand"><span class="moon"></span>moonops</span>
+    <a class="active" href="#">Work</a><a href="#">Offerings</a><a href="#">Dispatches</a><a href="#">Praise</a><a href="#">Contact</a>
+  </nav>
+</section>
+
+<section><span class="eyebrow">buttons</span>
+  <a class="btn btn-primary" href="#">Primary action</a>
+  <a class="btn btn-go" href="#">Ship it</a>
+  <a class="btn btn-ghost" href="#">Quiet option</a>
+</section>
+
+<section><span class="eyebrow">cards</span>
+  <div class="grid">
+    <div class="card"><h3>Card title</h3><p>Body copy sits in steel so the cream headings carry the hierarchy.</p></div>
+    <div class="card"><h3>Hover me</h3><p>Every interactive surface lifts 3px. One motion, everywhere.</p></div>
+    <div class="card"><h3>Third card</h3><p>Grid auto-fits at 240px so layouts hold on mobile without media queries.</p></div>
+  </div>
+</section>
+
+<section><span class="eyebrow">status pills</span>
+  <span class="pill pill-live">LIVE</span> <span class="pill pill-info">IN PROGRESS</span>
+  <span class="pill pill-warn">NEEDS YOU</span> <span class="pill pill-block">BLOCKED</span>
+</section>
+
+<section><span class="eyebrow">tasks</span>
+  <div class="task"><span class="box"></span><span class="label">Open task looks like this</span></div>
+  <div class="task done"><span class="box"></span><span class="label">Done task settles into steel</span></div>
+</section>
+
+<section><span class="eyebrow">progress</span>
+  <div class="bar"><i style="width:59%"></i></div>
+</section>
+
+<section><span class="eyebrow">stats</span>
+  <div class="grid">
+    <div class="stat"><div class="n">13</div><div class="l">UPLOADED</div></div>
+    <div class="stat"><div class="n">22</div><div class="l">IN PLAN</div></div>
+    <div class="stat"><div class="n">5</div><div class="l">PAGES LIVE</div></div>
+  </div>
+</section>
+
+<section><span class="eyebrow">table</span>
+  <table>
+    <tr><th>PREMIERE</th><th>VIDEO</th><th>STATUS</th></tr>
+    <tr><td>2026-07-07</td><td>Ocean at Night</td><td><span class="pill pill-live">SCHEDULED</span></td></tr>
+    <tr><td>2026-07-10</td><td>Campfire &amp; Rain</td><td><span class="pill pill-info">RENDERING</span></td></tr>
+  </table>
+</section>
+</body>
+</html>

@@ -1,0 +1,30 @@
+# Secrets — never commit anything credential-shaped
+*.env
+.env
+*.pem
+*.key
+*.p12
+*.pfx
+*.keystore
+*_secret.json
+*secret*.json
+*token*.json
+credentials*.json
+.npmrc
+.pypirc
+.gumroad_token
+
+# OS / editor
+.DS_Store
+Thumbs.db
+*.swp
+*~
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Logs / generated
+*.log
