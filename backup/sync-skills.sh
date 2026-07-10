@@ -7,7 +7,7 @@ set -eu
 export PATH="/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin"
 
 PROJECTS="/Users/you/Claude/Projects/moonops
-/Users/you/Claude/Projects/Resume Tracker"
+/Users/you/Claude/Projects/project-b"
 
 echo "$PROJECTS" | while IFS= read -r P; do
   [ -d "$P" ] || continue
