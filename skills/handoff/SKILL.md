@@ -88,3 +88,5 @@ Tell the user:
 2. Lock everything settled into the ✅ list; an unlocked decision becomes the receiver's to make.
 3. Absolute paths only — the receiver has none of your session memory.
 4. No placeholder survives the copy block: fill it, or move it to Needs-from-owner.
+
+

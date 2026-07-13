@@ -62,3 +62,5 @@ Write "none" if empty - the section always appears.
 7. Two fix attempts per failure, then stop. Report what you tried, what failed, and your best hypothesis. Do not spiral.
 8. Never claim an external action (push, deploy, upload) succeeded without a verification step. State exactly what was and was not verified.
 9. Stay inside the workspace named in the spec. Files elsewhere are read-only context.
+
+
