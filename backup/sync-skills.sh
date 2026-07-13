@@ -16,3 +16,13 @@ echo "$PROJECTS" | while IFS= read -r P; do
   rsync -a --delete --exclude .DS_Store "$HOME/.claude/agents/" "$P/.claude/agents/"
   echo "synced skills+agents -> $P/.claude/"
 done
+
+# Toolkit persona copies are GENERATED MIRRORS of the canonical ~/.claude skills
+# (canon decision 2026-07-10 — the pair had silently forked). Never hand-edit
+# Toolkit/selene or Toolkit/council; edit ~/.claude/skills/* and rerun this.
+for s in selene council; do
+  [ -d "$HOME/.claude/skills/$s" ] || continue
+  mkdir -p "$HOME/Claude/Toolkit/$s"
+  rsync -a --delete --exclude .DS_Store "$HOME/.claude/skills/$s/" "$HOME/Claude/Toolkit/$s/"
+done
+echo "mirrored selene+council -> Toolkit/ (one-way, canon: ~/.claude/skills)"

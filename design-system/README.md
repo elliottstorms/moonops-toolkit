@@ -19,15 +19,25 @@ quieter option wins. the design lead (CCO) holds the veto on channel work; on we
 | `--cream` | `#f6f0eb` | Primary text. Never pure white. |
 | `--steel` | `#92a2c4` | Secondary text, labels. |
 | `--purple` | `#b95cff` | THE accent: links, primary actions. |
-| `--green` | `#4aff9e` | Success/live only — use sparingly. |
+| `--green` | `#4aff9e` | Success/live, plus its one bounded second role: the mono-label/data accent (eyebrows, stats, timeline years). Never on a button, CTA, or large fill — that's a veto. |
 | `--amber` / `--rose` | `#ffc86b` / `#ff6b8a` | Warn / blocked (tool UIs only). |
+| `--text-lead` / `--text-body` | `#cdd6e8` / `#dbe2f0` | Lead and long-form text tints on gradient pages (between steel and cream). |
+| `--grad-mid` / `--grad-deep` | `#131d3a` / `#1a1c44` | The body gradient's mid and deepest stops (with `--ink` at the ends). |
 
 **Type** — Poppins for display and body; JetBrains Mono for eyebrows, labels, and data;
 Georgia only for pull quotes. The `// eyebrow` mono label is the signature cue — every major
 section gets one.
 
-**Shape & motion** — 14px radius on cards and buttons, pill radius on chips; one hover motion
-(`translateY(-3px)`, .18s ease) everywhere; one shadow. Nothing bounces, nothing spins.
+**Shape & motion** — 16px radius on cards and buttons (legacy 11–18px variants converge to 16
+opportunistically, never as a repaint), pill radius on chips; one hover motion
+(`translateY(-2px)`, .15s ease) everywhere, with .2s reserved for image zooms; one shadow.
+Nothing bounces, nothing spins.
+
+**Named exceptions (Council resolution 2026-07-11, 5-0)** — the index turntable set-piece is the
+one sanctioned spin (it's a record; records spin) and must stay inside `prefers-reduced-motion`;
+citing it to justify a second spin anywhere is a veto. SVG internals (the moonmark gradient stops on all
+five pages, the turntable record-label gradient stops on index, `favicon.svg`) intentionally carry
+literal hex — hand-sync them if `--purple-bright` ever changes (a one-shared-CSS-rule fix is pre-approved for after 2026-07-15).
 
 **Hard rules**
 1. Dark surfaces only. No light-mode variant exists.

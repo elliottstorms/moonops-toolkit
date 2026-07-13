@@ -19,4 +19,21 @@ if [ -d "$IN" ]; then
     echo "$pending" | sed 's#.*/##'
   fi
 fi
+
+# Self-heal tripwires — quiet unless something needs you. A queued digest
+# older than 36h means the daily self-heal-daily pass hasn't fired (scheduled
+# tasks can fail silently — the 2026-07-10 frontmatter bug class); a non-empty
+# pending-review.md means proposals are waiting on her decision.
+SH="$HOME/.claude/self-heal"
+if [ -d "$SH/queue" ]; then
+  stale=$(find "$SH/queue" -name '*.md' -mmin +2160 2>/dev/null | wc -l | tr -d ' ')
+  if [ "$stale" -gt 0 ]; then
+    echo
+    echo "== self-heal: $stale session digest(s) waiting >36h — daily heal may be stalled; run /self-heal =="
+  fi
+fi
+if [ -s "$SH/pending-review.md" ]; then
+  echo
+  echo "== self-heal: proposals awaiting you — say 'review the pending self-heal proposals' =="
+fi
 exit 0

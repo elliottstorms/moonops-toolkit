@@ -9,9 +9,14 @@
   --cream: #f6f0eb;      /* primary text — warm, never pure white */
   --steel: #92a2c4;      /* secondary text, labels, muted UI */
   --purple: #b95cff;     /* brand accent — links, primary actions, highlights */
-  --green: #4aff9e;      /* success / live / "go" accent — use sparingly */
+  --purple-bright: #c879ff; /* hover / high-contrast purple for small text on card surfaces (≥4.5:1 on --card) */
+  --green: #4aff9e;      /* success/live + the mono-label/data accent (eyebrows, stats, timeline years); never buttons, CTAs, or large fills */
   --amber: #ffc86b;      /* warnings, "needs attention" (derived, harmonizes with cream) */
   --rose: #ff6b8a;       /* failures, blockers (derived; not on the live site yet) */
+  --text-lead: #cdd6e8;  /* subtitle / lead paragraphs on gradient pages (between steel and cream) */
+  --text-body: #dbe2f0;  /* long-form body copy on gradient pages */
+  --grad-mid: #131d3a;   /* body gradient mid stops (30% / 78%) */
+  --grad-deep: #1a1c44;  /* body gradient deepest stop (55%) */
 
   /* ---- type ---- */
   --font-display: 'Poppins', sans-serif;      /* headings, hero, buttons */
@@ -19,15 +24,15 @@
   --font-serif: Georgia, serif;               /* pull quotes / testimonials only */
 
   /* ---- rhythm ---- */
-  --radius: 14px;        /* cards and buttons share one radius */
+  --radius: 16px;        /* cards and buttons share one radius (legacy 11–18px converge here over time) */
   --radius-pill: 999px;  /* chips, badges, status pills */
   --gap: 20px;           /* default component gap */
   --pad-card: 22px;      /* card interior padding */
   --shadow: 0 10px 30px rgba(0, 0, 0, .35);
 
   /* ---- motion ---- */
-  --lift: translateY(-3px);         /* standard hover lift */
-  --ease: .18s ease;                /* one duration, one easing, everywhere */
+  --lift: translateY(-2px);         /* standard hover lift */
+  --ease: .15s ease;                /* one duration, one easing (.2s reserved for image zooms) */
 }
 
 /* Base surface — every MoonOps page starts here */
