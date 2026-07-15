@@ -107,3 +107,4 @@ Final step, and only after Step 4's live-parity gate reported **IN SYNC** (byte-
 ```
 
 If Step 4 MISMATCHed or the pipeline stopped earlier, do not log.
+
