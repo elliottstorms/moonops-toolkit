@@ -8,22 +8,14 @@ Everything here is deliberately generic. It was extracted from a working persona
 
 | Folder | What it is |
 |---|---|
-| `agents/` | Seven focused sub-agents: `researcher`, `builder`, `reviewer`, `verifier`, `brand-guardian`, `pii-auditor`, and `redaction-verifier`. Each has one job and a strict output contract. |
-| `bin/` | Claude Code hook scripts — em-dash checks on public copy, a static-site link check, a PII gate on tool calls, a session-start orientation printout, a durable-asset backup nudge, and a GitHub MCP launcher that reads its token from the `gh` keychain at runtime (no secret on disk). |
-| `skills/` | Reusable skills: `site-check` (offline static-site audit), `ship-site` (audit → commit → push → verify), `handoff` / `run-handoff` (pass in-flight work between sessions), `backup` (mirror durable assets to a private repo with a secrets tripwire), `audiocast` (text to clean offline mp3), and the PII kit: `pii-scan` (deterministic scanner with checksum validation) and `pii-gate` (hook, pre-commit, and sweep routines). |
+| `agents/` | Five focused sub-agents: `researcher`, `builder`, `reviewer`, `verifier`, and `brand-guardian`. Each has one job and a strict output contract. |
+| `bin/` | Claude Code hook scripts — em-dash checks on public copy, a static-site link check, a session-start orientation printout, a durable-asset backup nudge, and a GitHub MCP launcher that reads its token from the `gh` keychain at runtime (no secret on disk). |
+| `skills/` | Reusable skills: `site-check` (offline static-site audit), `ship-site` (audit → commit → push → verify), `handoff` / `run-handoff` (pass in-flight work between sessions), and `backup` (mirror durable assets to a private repo with a secrets tripwire). |
 | `design-system/` | The MoonOps design tokens, palette, a living component demo, and the brand rulebook. A real, working example of a small dark-mode design system. |
 | `templates/` | Fill-in-the-blank templates: decision memo, dispatch request, market research, premortem, verification checklist, weekly review. |
 | `backup/` | A reference `backup.sh` that mirrors your assets to a private GitHub repo and refuses to commit anything credential-shaped. |
 | `settings.example.json` | Example Claude Code hook wiring. |
 | `CLAUDE.template.md` | A blank operator-manual template — the structure of a good `CLAUDE.md`, with none of the personal content. |
-
-## The PII kit
-
-The newest family: guardrails for using AI assistants around personal data in
-regulated or privacy-serious environments. A checksum-validating scanner, gates
-on the tool-call and commit paths, two adversarial review agents, and policy +
-evidence-log templates, with CI proving the gate catches on every push.
-[PII.md](PII.md) has the threat model and the exam-readiness mapping.
 
 ## Design principles
 

@@ -1,8 +1,0 @@
-This file mentions social security, routing, and account language with no
-actual values. It must always pass the gate.
-
-A Luhn-invalid number: 4111 1111 1111 1112 must not flag.
-A checksum-invalid routing candidate: 123456789 must not flag.
-Version strings like 10.2.14 and build 20260717 are fine.
-Contact the operations team at the main office, extension 4021.
-The policy covers member data, card data, and loan files in general terms.
