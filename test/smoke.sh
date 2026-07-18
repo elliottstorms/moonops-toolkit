@@ -25,6 +25,25 @@ done
 note "== site auditor answers --help =="
 python3 skills/site-check/site_audit.py --help > /dev/null && echo "  site_audit OK"
 
+note "== pii scanner: help, gate direction, redact round-trip =="
+python3 skills/pii-scan/pii_scan.py --help > /dev/null && echo "  pii_scan --help OK"
+if python3 skills/pii-scan/pii_scan.py --mode gate test/pii/dirty.txt > /dev/null 2>&1; then
+  echo "  FAIL: dirty fixture passed the gate"; exit 2
+else
+  echo "  gate catches dirty fixture"
+fi
+if python3 skills/pii-scan/pii_scan.py --mode gate test/pii/clean.txt > /dev/null 2>&1; then
+  echo "  clean fixture passes"
+else
+  echo "  FAIL: clean fixture tripped the gate (false positive)"; exit 2
+fi
+if python3 skills/pii-scan/pii_scan.py --mode redact test/pii/dirty.txt 2>/dev/null \
+   | python3 skills/pii-scan/pii_scan.py --mode gate --stdin > /dev/null 2>&1; then
+  echo "  redaction round-trip comes back clean"
+else
+  echo "  FAIL: redacted output still trips the gate"; exit 2
+fi
+
 note "== no credential-shaped strings in tracked files =="
 if grep -rInE "gh[pousr]_[A-Za-z0-9]{20,}|sk-ant-[A-Za-z0-9-]{20,}|AKIA[0-9A-Z]{16}|xox[baprs]-[A-Za-z0-9-]{10,}|-----BEGIN [A-Z ]*PRIVATE KEY-----" . --exclude-dir=.git --exclude=smoke.sh; then
   echo "  FAIL: token-like string found"; exit 2

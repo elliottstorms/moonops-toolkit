@@ -12,6 +12,17 @@
             "statusMessage": "Checking git add safety..."
           }
         ]
+      },
+      {
+        "matcher": "Write|Edit|WebFetch",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Users/you/.claude/bin/pii-gate-hook.sh",
+            "timeout": 15,
+            "statusMessage": "PII gate..."
+          }
+        ]
       }
     ],
     "PostToolUse": [
