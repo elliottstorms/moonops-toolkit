@@ -1,6 +1,6 @@
 ---
 name: restore-drill
-description: "Prove the your-backup-repo backup actually restores: clone the private GitHub mirror to a temp dir and diff it against the live sources (skills, agents, bin, CLAUDE.md, settings, Toolkit, TASKS.md, memory). An untested backup is a hope, not a backup. Use when the user says 'restore drill', 'prove the backup', 'test the backup', 'would the backup actually work', or on a quarterly cadence — and after any change to backup.sh's include list or tripwire."
+description: "Prove the backup actually restores: clone the private GitHub mirror to a temp dir and diff it against the live sources (skills, agents, bin, CLAUDE.md, settings, Toolkit, TASKS.md, memory). An untested backup is a hope, not a backup. Use when the user says 'restore drill', 'prove the backup', 'test the backup', 'would the backup actually work', or on a quarterly cadence — and after any change to backup.sh's include list or tripwire."
 ---
 
 # Restore drill — prove the backup restores
