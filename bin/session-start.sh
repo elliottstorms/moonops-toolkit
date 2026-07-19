@@ -32,8 +32,19 @@ if [ -d "$SH/queue" ]; then
     echo "== self-heal: $stale session digest(s) waiting >36h — daily heal may be stalled; run /self-heal =="
   fi
 fi
-if [ -s "$SH/pending-review.md" ]; then
-  echo
-  echo "== self-heal: proposals awaiting you — say 'review the pending self-heal proposals' =="
+# Count OPEN proposals, not just a non-empty file: pending-review.md always carries
+# its header/instructions, so `-s` fired forever once written (stale-banner bug,
+# 2026-07-18). A proposal is open if its `## Proposal N` block has no decided marker.
+if [ -f "$SH/pending-review.md" ]; then
+  open=$(awk '
+    /^## Proposal /       { if (inblk && !decided) open++; inblk=1; decided=0; next }
+    /^## /                { if (inblk && !decided) open++; inblk=0 }
+    inblk && tolower($0) ~ /(applied|rejected|decided)/ { decided=1 }
+    END { if (inblk && !decided) open++; print open+0 }
+  ' "$SH/pending-review.md")
+  if [ "$open" -gt 0 ]; then
+    echo
+    echo "== self-heal: $open proposal(s) awaiting you — say 'review the pending self-heal proposals' =="
+  fi
 fi
 exit 0
