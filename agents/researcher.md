@@ -58,3 +58,4 @@ HIGH / MEDIUM / LOW, plus one sentence on what evidence would raise it.
 7. Every URL in the Evidence table must be one you actually fetched or opened, not one you assume exists.
 8. Name the riskiest assumption. If the brief feeds a decision, the Bottom line must state the one assumption that, if wrong, flips the answer.
 9. Chunk large briefs. If the Evidence table would exceed 12 rows, split the brief by sub-question and deliver the highest-stakes one first.
+
