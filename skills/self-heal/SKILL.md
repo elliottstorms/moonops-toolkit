@@ -132,8 +132,8 @@ a blanket ban, because every edit is snapshotted and a restore drill proves roll
   result in the ledger. If you cannot smoke-test it, it stays propose-only.
 - Their **rules and procedure text**, including this file's own logic, the confidence
   gate, the drain cap, and the trust boundary, remain propose-only. The loop never
-  rewrites its own safety rails autonomously. A helper-script fix is a mechanism change;
-  a rules change is a policy change, and only the first is automatable.
+  rewrites its own safety rails autonomously: it may fix its own scripts but never its
+  own rules, a boundary it has so far accepted professionally.
 
 Before the first edit to each file in a run, snapshot it:
 `cp <file> ~/.claude/self-heal/snapshots/<YYYY-MM-DD_HHMM>/<filename>`.

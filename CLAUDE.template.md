@@ -1,4 +1,4 @@
-# CLAUDE.md — Operator Manual (template)
+# CLAUDE.md: Operator Manual (template)
 
 > Copy this to `~/.claude/CLAUDE.md` and fill it in. This is persistent context about who you
 > are, how you work, and what you're trying to do. Claude reads it at the start of every session
@@ -28,7 +28,7 @@
 
 ## Strengths
 
-> The handful of things you're genuinely good at — the ones a collaborator should lean on.
+> The handful of things you're genuinely good at, the ones a collaborator should lean on.
 
 ## Blind spots
 
@@ -46,5 +46,5 @@
 
 ## Things that don't fit neatly in a config file
 
-> The stuff that's true but doesn't have a header. Often the most useful section — write it last,
+> The stuff that's true but doesn't have a header. Often the most useful section; write it last,
 > once you notice what you keep repeating to Claude.

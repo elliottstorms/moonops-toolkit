@@ -1,5 +1,5 @@
 #!/bin/sh
-# backup.sh — mirror your durable Claude Code assets into a PRIVATE GitHub repo.
+# backup.sh: mirror your durable Claude Code assets into a PRIVATE GitHub repo.
 # Idempotent: commits and pushes only when something actually changed.
 #
 # Included:  ~/.claude/CLAUDE.md, ~/.claude/settings.json, ~/.claude/skills/,
@@ -7,7 +7,7 @@
 # EXCLUDED, permanently:  anything with PII (job-search, finance, personal notes)
 #            and anything matching the secrets tripwire below.
 #
-# Setup:     set REPO to your own PRIVATE repo (create it private — this is a backup,
+# Setup:     set REPO to your own PRIVATE repo (create it private; this is a backup,
 #            not a publication). Requires the `gh` CLI, authenticated (`gh auth login`).
 # Run:       sh backup.sh
 # Schedule:  add a launchd job (macOS) or cron entry to run it daily.
@@ -49,12 +49,12 @@ cp "$HOME/.claude/settings.json" "$STAGE/claude-config/settings.json" 2>/dev/nul
 BAD=$(cd "$STAGE" && find . -type f \( -name "client_secret*" -o -name "*token*.json" -o \
       -name "*.key" -o -name "*.pem" -o -name ".env" -o -name "credentials*.json" \) | head -5)
 if [ -n "$BAD" ]; then
-  say "ABORT: credential-shaped file(s) in staging — NOT committing: $BAD"
+  say "ABORT: credential-shaped file(s) in staging, NOT committing: $BAD"
   exit 2
 fi
 if grep -rlE "gh[pousr]_[A-Za-z0-9]{20,}|sk-ant-[A-Za-z0-9-]{20,}|AIza[0-9A-Za-z_-]{30,}|AKIA[0-9A-Z]{16}" \
      "$STAGE" --exclude-dir=.git >/dev/null 2>&1; then
-  say "ABORT: token-like string found in staged content — NOT committing"
+  say "ABORT: token-like string found in staged content, NOT committing"
   exit 2
 fi
 
@@ -62,10 +62,10 @@ fi
 cd "$STAGE"
 git add -A
 if git diff --cached --quiet; then
-  say "no changes — nothing to back up"
+  say "no changes, nothing to back up"
   exit 0
 fi
 CHANGED=$(git diff --cached --stat | tail -1)
-git commit -q -m "backup: $(date '+%Y-%m-%d %H:%M') — $CHANGED"
+git commit -q -m "backup: $(date '+%Y-%m-%d %H:%M'), $CHANGED"
 git push -q -u origin main
 say "backed up + pushed: $CHANGED"

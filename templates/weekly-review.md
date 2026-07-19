@@ -1,6 +1,6 @@
 <!--
 WHEN TO USE: Once a week, same day (suggest Friday PM or Monday AM). ~20 minutes, fill top to bottom.
-HOW TO FILL: Numbers over narratives. The waiting-on table's days-silent counter is the point — update it even when nothing moved,
+HOW TO FILL: Numbers over narratives. The waiting-on table's days-silent counter is the point: update it even when nothing moved,
 especially when nothing moved. "Stop doing" must name a real activity, not a vice.
 -->
 
@@ -19,7 +19,7 @@ especially when nothing moved. "Stop doing" must name a real activity, not a vic
 ## Pipeline / follow-ups
 
 <!-- Any thread you're waiting on a reply for. Days silent = today minus last contact.
-     Nudge rule: decide the threshold once (e.g. 4 business days) and let it fire — don't re-litigate weekly. -->
+     Nudge rule: decide the threshold once (e.g. 4 business days) and let it fire; do not re-litigate weekly. -->
 
 | Thread | Last contact | Days silent | Next action (if past threshold) |
 |---|---|---|---|
@@ -27,7 +27,7 @@ especially when nothing moved. "Stop doing" must name a real activity, not a vic
 
 ## Workstreams
 
-<!-- One row per active workstream. "Moved?" is yes/no — no is a valid, useful answer. -->
+<!-- One row per active workstream. "Moved?" is yes/no, and no is a valid, useful answer. -->
 
 | Workstream | Moved this week? | Concrete evidence | Blocked on |
 |---|---|---|---|
@@ -44,7 +44,7 @@ especially when nothing moved. "Stop doing" must name a real activity, not a vic
 
 - **Stop:** <a real activity that isn't paying off>
 - **Start:** <one thing to try next week>
-- **Keep:** <what's working — protect it>
+- **Keep:** <what is working; protect it>
 
 ## Top 3 for next week
 

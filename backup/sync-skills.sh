@@ -1,5 +1,5 @@
 #!/bin/sh
-# sync-skills.sh — copies user-level skills + agents into each project's .claude/
+# sync-skills.sh: copies user-level skills + agents into each project's .claude/
 # so project-scoped sessions (sandboxed to the project folder) can find them.
 # Canonical source stays ~/.claude/{skills,agents}; these are read-only mirrors.
 # Runs standalone, or as the first step of backup.sh.

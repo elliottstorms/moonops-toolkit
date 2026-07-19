@@ -1,5 +1,5 @@
 #!/bin/sh
-# smoke.sh — locks in the toolkit's known-good state. Everything here passes
+# smoke.sh: locks in the toolkit's known-good state. Everything here passes
 # today; a regression in any of it means a broken kit shipped to strangers'
 # machines. Run from the repo root: sh test/smoke.sh
 set -eu

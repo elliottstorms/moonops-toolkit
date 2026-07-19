@@ -1,6 +1,6 @@
 ---
 name: weekly-review
-description: Run the weekly review — gather live data from every active workstream, fill the weekly-review template, update the task list, and surface the top 3 for next week. Includes gated quarterly proofs (restore drill, backup tripwire self-test). Use when the user says "weekly review", "how did this week go", "wrap up the week", or on a Friday/Sunday cadence ask.
+description: Run the weekly review; gather live data from every active workstream, fill the weekly-review template, update the task list, and surface the top 3 for next week. Includes gated quarterly proofs (restore drill, backup tripwire self-test). Use when the user says "weekly review", "how did this week go", "wrap up the week", or on a Friday/Sunday cadence ask.
 ---
 
 # Weekly review, the operating cadence

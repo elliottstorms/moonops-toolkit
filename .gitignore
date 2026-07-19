@@ -1,4 +1,4 @@
-# Secrets — never commit anything credential-shaped
+# Secrets: never commit anything credential-shaped
 *.env
 .env
 *.pem
