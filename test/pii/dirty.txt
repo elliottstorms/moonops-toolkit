@@ -1,0 +1,13 @@
+SYNTHETIC TEST DATA. Every value below is fake, drawn from standard test
+ranges (Luhn test PAN, fictional 555-01xx phone block, example.com). This
+file exists so the PII gate has something to catch. It must never pass.
+
+Name: Jane Doe
+SSN: 123-45-6789
+Card: 4111 1111 1111 1111
+Wire routing: 021000021
+Account number: 00482913
+Phone: (202) 555-0142
+Email: jane.doe@example.com
+DOB: 04/12/1987
+Address: 128 Fake Street, Springfield

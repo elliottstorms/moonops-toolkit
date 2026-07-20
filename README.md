@@ -10,14 +10,22 @@ Everything here is deliberately generic: extracted from a working personal setup
 
 | Folder | What it is |
 |---|---|
-| `agents/` | Five focused sub-agents: `researcher`, `builder`, `reviewer`, `verifier`, and `brand-guardian`. Each has one job and a strict output contract. |
-| `bin/` | Claude Code hook scripts: em-dash checks on public copy, a static-site link check, a session-start orientation printout, a durable-asset backup nudge, a session-end capture hook that feeds `self-heal`, and a GitHub MCP launcher that reads its token from the `gh` keychain at runtime (no secret on disk). |
-| `skills/` | Reusable skills: `site-check` (offline static-site audit), `ship-site` (audit → commit → push → verify), `handoff` / `run-handoff` (pass in-flight work between sessions), `backup` (mirror durable assets to a private repo with a secrets tripwire), `restore-drill` (clone the mirror and diff it against reality, because an untested backup is a hope, not a backup), `premortem` (assume the launch failed, reconstruct the death, write the preventions back into the plan as gates), `self-heal` (read what the operator corrected in past sessions and fold it back into the skills, with a ledger of why), and `weekly-review` (numbers from files, not recall). |
+| `agents/` | Seven focused sub-agents: `researcher`, `builder`, `reviewer`, `verifier`, `brand-guardian`, `pii-auditor`, and `redaction-verifier`. Each has one job and a strict output contract. |
+| `bin/` | Claude Code hook scripts: em-dash checks on public copy, a static-site link check, a PII gate on tool calls, a session-start orientation printout, a durable-asset backup nudge, a session-end capture hook that feeds `self-heal`, and a GitHub MCP launcher that reads its token from the `gh` keychain at runtime (no secret on disk). |
+| `skills/` | Reusable skills: `site-check` (offline static-site audit), `ship-site` (audit → commit → push → verify), `handoff` / `run-handoff` (pass in-flight work between sessions), `backup` (mirror durable assets to a private repo with a secrets tripwire), `restore-drill` (clone the mirror and diff it against reality, because an untested backup is a hope, not a backup), `premortem` (assume the launch failed, reconstruct the death, write the preventions back into the plan as gates), `self-heal` (read what the operator corrected in past sessions and fold it back into the skills, with a ledger of why), `weekly-review` (numbers from files, not recall), and the PII kit: `pii-scan` (deterministic scanner with checksum validation) and `pii-gate` (hook, pre-commit, and sweep routines). |
 | `design-system/` | The MoonOps design tokens, palette, a living component demo, and the brand rulebook. A real, working example of a small dark-mode design system. |
 | `templates/` | Fill-in-the-blank templates: decision memo, dispatch request, market research, premortem, verification checklist, weekly review. |
 | `backup/` | A reference `backup.sh` that mirrors your assets to a private GitHub repo and refuses to commit anything credential-shaped. |
 | `settings.example.json` | Example Claude Code hook wiring. |
 | `CLAUDE.template.md` | A blank operator-manual template: the structure of a good `CLAUDE.md`, with none of the personal content. |
+
+## The PII kit
+
+Guardrails for using AI assistants around personal data in regulated or
+privacy-serious environments. A checksum-validating scanner, gates on the
+tool-call and commit paths, two adversarial review agents, and policy plus
+evidence-log templates, with CI proving the gate catches on every push.
+[PII.md](PII.md) has the threat model and the exam-readiness mapping.
 
 ## Design principles
 
