@@ -26,3 +26,18 @@ sh ~/.claude/skills/restore-drill/restore_drill.sh
 
 The script never writes to the live sources or the stage; it works entirely in
 a throwaway temp dir and removes it on exit.
+
+## Also prove the learning loop, not just the files
+
+A restore drill proves the durable assets would come back. It says nothing about
+whether the machine that keeps them current still runs. Pair it with:
+
+```bash
+bash ~/.claude/skills/self-heal/selftest.sh
+```
+
+26 checks over the self-heal chain (capture hook, both content-age gates, the
+trust boundary, atomic state writes, managed-block marker balance). It restores
+its own state on exit and is safe to run beside the drill. Report both results
+together: a green backup with a red selftest means you are faithfully preserving
+a loop that quietly stopped learning.

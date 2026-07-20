@@ -1,5 +1,4 @@
 {
-  "skipWorkflowUsageWarning": true,
   "hooks": {
     "PreToolUse": [
       {
@@ -67,5 +66,7 @@
         ]
       }
     ]
-  }
+  },
+  "skipWorkflowUsageWarning": true,
+  "theme": "dark"
 }

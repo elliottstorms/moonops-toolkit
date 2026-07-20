@@ -167,6 +167,17 @@ def main():
         print("distill: gated (scheduled-task run, no user signal)", file=sys.stderr)
         return 3
 
+    # Autonomous skill-launcher guard: some loops (gitscore weekly, etc.) start a
+    # session with a machine-generated "run one full cycle in Automated mode"
+    # message. It is a launcher firing a skill, not you working — no
+    # preference signal, and it burns a drain slot. Gate a session whose EVERY
+    # typed message is such a launch. A single genuine follow-up she types keeps
+    # the session in (same escape hatch as the scheduled-task guard above).
+    _launch = re.compile(r"run\s+(?:one\s+)?full\s+cycle\s+in\s+automated\s+mode", re.I)
+    if typed and all(_launch.search(t[2]) for t in typed):
+        print("distill: gated (autonomous skill-launcher run, no user signal)", file=sys.stderr)
+        return 3
+
     # Content-age gate. The sweep must not re-mine history that predates the loop
     # (already covered by /insights) — but file mtime lies: a resumed or rewritten
     # transcript carries today's mtime over month-old content, so mtime-based
