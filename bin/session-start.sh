@@ -35,12 +35,20 @@ fi
 # Count OPEN proposals, not just a non-empty file: pending-review.md always carries
 # its header/instructions, so `-s` fired forever once written (stale-banner bug,
 # 2026-07-18). A proposal is open if its `## Proposal N` block has no decided marker.
+# The status word lives in the header (`## Proposal 12 — APPLIED …`), so inspect
+# that line too — the old version ran `next` before it could, and every closed
+# proposal read as open forever (2026-07-23, proposal 13). Body text only counts
+# when it starts with `**Status:`, so a proposal that merely quotes another's
+# status no longer marks itself closed; header match is case-sensitive on the
+# file's uppercase convention so an ordinary "undecided" cannot collide.
 if [ -f "$SH/pending-review.md" ]; then
   open=$(awk '
-    /^## Proposal /       { if (inblk && !decided) open++; inblk=1; decided=0; next }
-    /^## /                { if (inblk && !decided) open++; inblk=0 }
-    inblk && tolower($0) ~ /(applied|rejected|decided)/ { decided=1 }
-    END { if (inblk && !decided) open++; print open+0 }
+    /^## Proposal / { if (inblk && !dec) open++; inblk=1;
+                      dec=($0 ~ /(APPLIED|REJECTED|DECIDED|RESOLVED|WITHDRAWN|SUPERSEDED)/); next }
+    /^## /          { if (inblk && !dec) open++; inblk=0 }
+    inblk && /^\*\*Status:/ &&
+      tolower($0) ~ /(applied|rejected|resolved|withdrawn|superseded|closed)/ { dec=1 }
+    END             { if (inblk && !dec) open++; print open+0 }
   ' "$SH/pending-review.md")
   if [ "$open" -gt 0 ]; then
     echo
