@@ -11,6 +11,41 @@ if [ -f "$T" ]; then
   sed -n '1,18p' "$T"
 fi
 
+# Daily brief (com.moonops.dailysync, 07:20). The brief is written to a local file
+# rather than emailed, so something has to surface it or it may as well not exist.
+# Fresh brief: show the alert lines and Today's one thing. Stale brief: say so,
+# because a missing morning sync is itself the alert — that is the exact failure
+# class (a launchd job dying quietly) the sync was built to catch, and nothing
+# else watches the watcher.
+BRIEF="$HOME/Claude/DailyBrief.md"
+if [ -f "$BRIEF" ]; then
+  if [ -n "$(find "$BRIEF" -mtime -1 2>/dev/null)" ]; then
+    echo
+    echo "== 🌙 Daily brief ($(date -r "$BRIEF" '+%a %-I:%M %p')) — ~/Claude/DailyBrief.html =="
+    grep -E '^> ⚠️|^\*\*Top priority' "$BRIEF" 2>/dev/null | head -4
+    awk '/^## 👉/{getline; print "👉 " $0; exit}' "$BRIEF" 2>/dev/null
+  elif [ -z "$(find "$BRIEF" -mtime -2 2>/dev/null)" ]; then
+    echo
+    echo "== ⚠️ daily-sync: brief is $(( ( $(date +%s) - $(date -r "$BRIEF" +%s) ) / 86400 ))d stale — the 07:20 sync may be dead; check ~/Claude/daily-sync/logs/run.log =="
+  fi
+fi
+
+# CLAUDE.md edits cannot be applied by the headless 07:20 sync (harness-level
+# sensitive-file gate, verified 2026-07-27), so it leaves proposals here instead.
+# An interactive session CAN apply them, which is exactly what this line is for.
+PROPS="$HOME/Claude/daily-sync/claude-md-proposals.md"
+# Count the `## ` proposal blocks, not just a non-empty file: this file always
+# carries its own header and instructions, so `-s` alone would nag forever. That
+# is the same stale-banner bug the self-heal check hit on 2026-07-18.
+if [ -f "$PROPS" ]; then
+  n=$(grep -c '^## ' "$PROPS" 2>/dev/null)
+  [ -n "$n" ] || n=0
+  if [ "$n" -gt 0 ]; then
+    echo
+    echo "== daily-sync: $n CLAUDE.md proposal(s) pending — say 'apply the CLAUDE.md proposals' =="
+  fi
+fi
+
 if [ -d "$IN" ]; then
   pending=$(ls -1 "$IN"/*.md 2>/dev/null)
   if [ -n "$pending" ]; then

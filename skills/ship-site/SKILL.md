@@ -10,9 +10,12 @@ moonops.org auto-deploys from GitHub: pushing `main` deploys (Netlify project
 post-processing disabled so live bytes == repo bytes). Follow the steps in order;
 each has a hard gate.
 
-**Ship scope:** only `site/`, `netlify.toml`, and `.site-check.json` ship to the website.
-Never `git add` paths outside them during this pipeline; if other paths have changes
-(moonops-rain/ etc.), mention in one line that they exist and are not shipping.
+**Ship scope:** only `site/`, `netlify.toml`, `netlify/edge-functions/`, and
+`.site-check.json` ship to the website. Edge functions arrived 2026-07-16 and are bundled
+into the deploy, so changing one ships exactly like changing a page; this line omitted them
+until 2026-07-27, when a counter fix had to be shipped out of scope. Never `git add` paths
+outside these during this pipeline; if other paths have changes (moonops-rain/,
+site-analytics/ etc.), mention in one line that they exist and are not shipping.
 
 ## Step 0 — Pre-flight drift check (before editing anything)
 
@@ -70,6 +73,20 @@ python3 ~/.claude/skills/site-check/site_audit.py --repo ~/Claude/Projects/moono
 
 **Run with a Bash timeout of at least 240000ms (or in the background). The command prints
 nothing until polling finishes — silence is normal, do not kill and retry.**
+
+**This gate proves the HTML and nothing else.** Byte-parity compares page bytes, so a
+`netlify.toml` header change or an edge-function change passes it while doing nothing, or
+while being broken. When the ship touched either, verify the behaviour separately and say
+so in the report:
+
+```bash
+curl -sS -o /dev/null -D - "https://www.moonops.org/" | grep -iE "^cache-control|cache-status"
+```
+
+For a `pagecount.ts` change, exercise it and re-pull the counter. **Netlify Blobs is
+eventually consistent: a write took 30 to 60 seconds to surface through `/api/stats`
+(2026-07-27).** Pull immediately and the stale read looks like the code is broken. Fire the
+request, wait a full minute, then `site-analytics/pull_stats.sh`.
 
 PASS + "live: IN SYNC" = proven shipped. On MISMATCH after the wait:
 - Check the deploy state: open https://app.netlify.com/projects/your-netlify-project/deploys

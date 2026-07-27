@@ -68,5 +68,8 @@
     ]
   },
   "skipWorkflowUsageWarning": true,
-  "theme": "dark"
+  "theme": "dark",
+  "enabledPlugins": {
+    "stripe@claude-plugins-official": true
+  }
 }
