@@ -27,6 +27,9 @@ and applying what they teach.
 | Pre-edit snapshots | `~/.claude/self-heal/snapshots/<YYYY-MM-DD_HHMM>/` |
 | State (last run and sweep timestamps) | `~/.claude/self-heal/state.json` |
 | Distiller | `~/.claude/skills/self-heal/distill.py` |
+| Atomic state writer | `~/.claude/skills/self-heal/state_update.py` |
+| Loop self-test | `~/.claude/skills/self-heal/selftest.sh` |
+| Capture log | `~/.claude/self-heal/logs/capture.log` |
 
 ## Mode
 
@@ -66,9 +69,36 @@ cutoff, or no typed user messages). Delete the empty file and move on.
 
 ### 2. Drain the queue
 
-Take the **oldest 8 digests at most**. Leftovers heal tomorrow; a bounded pass protects
-the usage limit. If the queue and the sweep are both empty, append a one-line no-op
-entry to the ledger, update `state.json`, and stop.
+Take **8 digests at most**. Leftovers heal tomorrow; a bounded pass protects the usage
+limit. If the queue and the sweep are both empty, append a one-line no-op entry to the
+ledger, update `state.json`, and stop.
+
+**Pick the 8 by substance, not by age.** Age-ordering will happily spend an entire pass
+on one-line probe dispatches and health-check pings while the richest digest of the day
+waits its turn, which is a bounded budget spent on the least informative sessions
+available. Rank instead with:
+
+```bash
+python3 - <<'PY'
+import os, re, glob, datetime
+q = os.path.expanduser('~/.claude/self-heal/queue')
+now = datetime.datetime.now()
+rows = []
+for p in glob.glob(q + '/*.md'):
+    t = open(p).read()
+    m = re.search(r'volume:\s*(\d+) typed user messages', t)
+    msgs = int(m.group(1)) if m else 0
+    age = (now - datetime.datetime.fromtimestamp(os.path.getmtime(p))).days
+    rows.append((0 if age >= 3 else 1, -msgs, -os.path.getsize(p), p))
+for r in sorted(rows)[:8]:
+    print(r[3])
+PY
+```
+
+Typed-message count first, byte size as the tiebreak, and **anything queued 3 or more
+days jumps to the front**, so a thin digest can never starve behind richer ones forever.
+The cap and every gate are unchanged: this reorders which 8 heal today, it never drops a
+digest. Note in the ledger which ones were deferred and why.
 
 ### 3. Extract signals
 
@@ -176,6 +206,25 @@ item, apply accepted ones through the same snapshot and managed-block mechanism,
 every decision in the ledger, and clear decided items from the file. CLAUDE.md proposals
 are applied only with an explicit yes in that conversation.
 
+## Proving the loop still works
+
+```bash
+bash ~/.claude/skills/self-heal/selftest.sh
+```
+
+26 checks across every link in the chain: file and syntax integrity, the capture path,
+the trust boundary (assistant text must never reach a digest), both content-age gates,
+the never-block contract (a missing or corrupt `state.json` must still let a session
+end), the loop guard, atomic state writes, bookkeeping surfaces, and managed-block
+marker balance across every skill and agent. It runs against synthetic fixtures in a
+scratch directory, restores `state.json` byte for byte on exit, and is safe to run at
+any time.
+
+Run it after any edit to the hook, the distiller, or the state writer, and as part of
+the quarterly restore drill. A green backup proves the files survive; this proves the
+machine that writes them still runs. Every link it tests has broken at least once in
+production, which is the only reason each check exists.
+
 ## Rollback
 
 Every edited file has a same-day copy in `snapshots/`. Beyond that, a daily backup
@@ -184,6 +233,8 @@ undone.
 
 ## Knobs
 
-The drain cap (8 per run) and block cap (15 bullets) are set in this file. The capture
-gates (`--min-user-msgs 1`, `--skip-if-first-cmd self-heal`) live in
-`session-end-capture.sh`. The sweep window lives in `state.json.last_sweep`.
+The drain cap (8 per run), the drain ordering, and the block cap (15 bullets) are set in
+this file. The capture gates (`--min-user-msgs 1`, `--skip-if-first-cmd self-heal`,
+`--skip-if-content-before`) live in `session-end-capture.sh`. The sweep window lives in
+`state.json.last_sweep`. The capture log rotates at 2000 lines, down to the last 500,
+inside the hook.
