@@ -76,13 +76,19 @@ fi
 # when it starts with `**Status:`, so a proposal that merely quotes another's
 # status no longer marks itself closed; header match is case-sensitive on the
 # file's uppercase convention so an ordinary "undecided" cannot collide.
+# LAST status marker wins (2026-07-28): the previous version latched dec once set,
+# so a proposal closed and later reopened (a real event — Proposal 17 was applied
+# then downgraded-open on 2026-07-27) would read closed forever, the quiet inverse
+# of the 2026-07-23 bug. Each `**Status:` line now overwrites dec, header included,
+# so the newest marker is authoritative. selftest.sh check 27 enforces the matching
+# file convention: at most one `**Status:` line per proposal block.
 if [ -f "$SH/pending-review.md" ]; then
   open=$(awk '
     /^## Proposal / { if (inblk && !dec) open++; inblk=1;
                       dec=($0 ~ /(APPLIED|REJECTED|DECIDED|RESOLVED|WITHDRAWN|SUPERSEDED)/); next }
     /^## /          { if (inblk && !dec) open++; inblk=0 }
-    inblk && /^\*\*Status:/ &&
-      tolower($0) ~ /(applied|rejected|resolved|withdrawn|superseded|closed)/ { dec=1 }
+    inblk && /^\*\*Status:/ {
+      dec=(tolower($0) ~ /(applied|rejected|resolved|withdrawn|superseded|closed)/) }
     END             { if (inblk && !dec) open++; print open+0 }
   ' "$SH/pending-review.md")
   if [ "$open" -gt 0 ]; then

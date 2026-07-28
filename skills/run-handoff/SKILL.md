@@ -1,6 +1,6 @@
 ---
 name: run-handoff
-description: Execute the newest staged dispatch in ~/Claude/Handoffs/inbox/ start-to-finish — honor its locked decisions, do the work, verify, append an Outcome block, log external effects, and move it to done/. Use when the user says "run the handoff", "execute the latest dispatch", or "pick up where we left off".
+description: 'Execute the newest staged dispatch in ~/Claude/Handoffs/inbox/ start-to-finish — honor its locked decisions, do the work, verify, append an Outcome block, log external effects, and move it to done/. Use when the user says "run the handoff", "execute the latest dispatch", or "pick up where we left off". ALSO use whenever a message points at a file under ~/Claude/Handoffs/inbox/ and asks for the work described in it, even when the words "handoff" or "dispatch" never appear (e.g. "build me X, located here: Handoffs/inbox/DISPATCH_....md").'
 ---
 
 # Run Handoff — consume the newest inbox dispatch

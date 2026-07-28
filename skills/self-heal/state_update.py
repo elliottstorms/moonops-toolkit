@@ -62,6 +62,7 @@ def main(argv):
                 state[key] = raw
 
     out = json.dumps(state, indent=2) + "\n"
+    tmp = None
     try:
         fd, tmp = tempfile.mkstemp(dir=os.path.dirname(PATH), prefix=".state.")
         with os.fdopen(fd, "w", encoding="utf-8") as f:
@@ -69,10 +70,11 @@ def main(argv):
         os.replace(tmp, PATH)
     except OSError as e:
         print(f"state_update: write failed: {e}", file=sys.stderr)
-        try:
-            os.unlink(tmp)
-        except OSError:
-            pass
+        if tmp is not None:
+            try:
+                os.unlink(tmp)
+            except OSError:
+                pass
         return 2
 
     sys.stdout.write(out)

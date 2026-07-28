@@ -136,12 +136,49 @@ CAPERR=${CAPERR:-0}
 LOGLEN=$(wc -l < "$ROOT/logs/capture.log" 2>/dev/null | tr -d ' ' || true)
 LOGLEN=${LOGLEN:-0}
 [ "$LOGLEN" -le 2000 ] && ok "capture.log within rotation cap ($LOGLEN lines)" || bad "capture.log not rotating ($LOGLEN lines)"
+# One `**Status:` line per proposal block, or the banner counter cannot be
+# trusted: dual status lines that drift apart is how the 2026-07-28 incident's
+# repair left 16 and 18 self-contradictory, and the counter's last-wins rule
+# (session-start.sh, 2026-07-28) assumes the newest marker is THE marker.
+DUPSTAT=$(awk '
+  /^## Proposal / { if (blk!="" && n>1) print blk; blk=$0; n=0; next }
+  /^## /          { if (blk!="" && n>1) print blk; blk="" }
+  blk!="" && /^\*\*Status:/ { n++ }
+  END             { if (blk!="" && n>1) print blk }
+' "$ROOT/pending-review.md" 2>/dev/null)
+[ -z "$DUPSTAT" ] && ok "one Status line per proposal block" || bad "dual Status lines in: $(echo "$DUPSTAT" | tr '\n' ';')"
+# The banner counter itself, against fixtures covering both stale-banner
+# directions: closed-reads-open (the 2026-07-23 bug) and reopened-reads-closed
+# (the sticky-dec inverse, fixed 2026-07-28). Runs the LIVE awk from
+# session-start.sh extracted verbatim, so the test cannot drift from the code.
+COUNTER=$(sed -n '/^  open=\$(awk /,/pending-review.md")$/p' "$HOME/.claude/bin/session-start.sh" | sed '1d;$d')
+if [ -n "$COUNTER" ]; then
+  cat > "$WORK/fix1.md" <<'FIX'
+## Proposal 90 — something still open
+**Status: open**
+## Proposal 91 — APPLIED 2026-01-01 — closed in header
+body text
+## Proposal 92 — closed in body only
+**Status: applied 2026-01-01, closed.**
+## Proposal 93 — applied then reopened
+**Status: applied 2026-01-01.**
+**Status: open — downgraded, the edit never landed**
+## Proposal 94 — discusses another proposal
+This block quotes `## Proposal 91 — APPLIED` and the word applied in prose.
+**Status: open**
+FIX
+  GOT=$(awk "$COUNTER" "$WORK/fix1.md")
+  [ "$GOT" = "3" ] && ok "banner counter fixtures (open/header-closed/body-closed/reopened/quoting) -> 3" \
+                   || bad "banner counter fixtures expected 3, got $GOT"
+else
+  bad "could not extract the counter awk from session-start.sh (layout changed?)"
+fi
 
 head_ "8. Managed-block integrity across the skill library"
 BADBLOCK=0
 for f in "$HOME"/.claude/skills/*/SKILL.md "$HOME"/.claude/agents/*.md; do
   [ -f "$f" ] || continue
-  s=$(grep -c 'self-heal:start' "$f"); e=$(grep -c 'self-heal:end' "$f")
+  read -r s e <<<"$(awk '/self-heal:start/{s++} /self-heal:end/{e++} END{print s+0, e+0}' "$f")"
   if [ "$s" != "$e" ] || [ "$s" -gt 1 ]; then
     bad "marker imbalance in ${f#$HOME/.claude/}: $s start / $e end"; BADBLOCK=1
   fi

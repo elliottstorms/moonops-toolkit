@@ -19,7 +19,7 @@ mkdir -p "$ROOT/queue" "$ROOT/done" "$ROOT/logs" "$ROOT/snapshots"
 
 # Log rotation: this hook fires on every session end, forever. Cap the log so
 # it can never grow unbounded; 500 lines of history is plenty for debugging.
-if [ -f "$LOG" ] && [ "$(wc -l < "$LOG" | tr -d ' ')" -gt 2000 ]; then
+if [ -f "$LOG" ] && [ "$(wc -l < "$LOG")" -gt 2000 ]; then
   tail -n 500 "$LOG" > "$LOG.tmp" && mv "$LOG.tmp" "$LOG"
 fi
 

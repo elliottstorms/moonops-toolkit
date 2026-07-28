@@ -25,7 +25,6 @@ from datetime import datetime
 
 SYSTEM_REMINDER_RE = re.compile(r"<system-reminder>.*?</system-reminder>", re.DOTALL)
 COMMAND_NAME_RE = re.compile(r"<command-name>(.*?)</command-name>", re.DOTALL)
-COMMAND_MSG_RE = re.compile(r"<command-message>.*?</command-message>", re.DOTALL)
 COMMAND_ARGS_RE = re.compile(r"<command-args>(.*?)</command-args>", re.DOTALL)
 # Harness-injected spans that arrive as user-role lines but are not the user:
 # background-task completion notices and local command stdout echoes.
@@ -103,7 +102,7 @@ def main():
     turns = []          # (timestamp, kind, text)
     meta = {"cwd": "", "gitBranch": "", "version": "", "entrypoint": "", "sessionId": ""}
     first_ts = last_ts = None
-    counts = {"assistant": 0, "user_lines": 0}
+    counts = {"assistant": 0}
     commands = []
 
     try:
@@ -125,7 +124,6 @@ def main():
                     continue
                 if ltype != "user" or obj.get("isSidechain") or obj.get("isMeta"):
                     continue
-                counts["user_lines"] += 1
                 for key in meta:
                     if not meta[key] and obj.get(key):
                         meta[key] = str(obj[key])
