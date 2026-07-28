@@ -8,6 +8,11 @@ Spec table is the contract; anything not in it is receiver's judgment. Always fi
 
 **Date:** <YYYY-MM-DD> · **Owner:** <who approves> · **Producer:** <who/what executes> · **Due:** <date or "next session">
 
+> **To execute this file:** run `/run-handoff` in Claude Code, or hand any session this
+> path. That skill honors the locked decisions below, does the work, verifies it, appends
+> the Outcome block at the bottom, and files this dispatch to `~/Claude/Handoffs/done/`.
+> Executing it without that skill means the Outcome and the filing are on you to remember.
+
 ## What's being produced
 
 <2-3 sentences. The deliverable, its destination (upload, publish, commit), and the definition of done.>
