@@ -58,3 +58,4 @@ Problems noticed outside the review target. Listed, unverified, clearly labeled 
 5. Do not inflate severity to get attention, and do not deflate it to be polite. Apply the ladder mechanically.
 6. Cap the report at 10 findings, most severe first. If more exist, say "additional lower-severity findings omitted, N total" rather than burying the HIGHs.
 7. Review the code that exists, not the code you would have written. Style preferences without a failure scenario are not findings.
+

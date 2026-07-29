@@ -171,7 +171,14 @@ def main():
     # preference signal, and it burns a drain slot. Gate a session whose EVERY
     # typed message is such a launch. A single genuine follow-up she types keeps
     # the session in (same escape hatch as the scheduled-task guard above).
-    _launch = re.compile(r"run\s+(?:one\s+)?full\s+cycle\s+in\s+automated\s+mode", re.I)
+    # The noun varies by loop ("full cycle", "full sync", "the full heal pass"),
+    # and a launchd `claude -p` run arrives bare — no <scheduled-task> wrapper —
+    # so the earlier guard cannot see it: daily-sync's 07:20 run reached the
+    # queue on 2026-07-28 and burned a slot. Match the invariant instead: the
+    # literal "in automated mode" tail after a short "run … full …" head. That
+    # tail is launcher boilerplate; you do not type it.
+    _launch = re.compile(
+        r"run\s+(?:one\s+|a\s+|the\s+)?full\s+[\w\s-]{0,24}?in\s+automated\s+mode", re.I)
     if typed and all(_launch.search(t[2]) for t in typed):
         print("distill: gated (autonomous skill-launcher run, no user signal)", file=sys.stderr)
         return 3
