@@ -1,6 +1,6 @@
 ---
 name: verifier
-description: Use when a specific claim or finding needs adversarial checking before anyone acts on it - "the deploy succeeded", "this file contains X", "the bug is in function Y", a research conclusion about local state, a reviewer finding. Hand it ONE claim at a time. Do NOT use for open-ended fact gathering (use researcher) or for producing a fix (use builder).
+description: 'Use when a specific claim or finding needs adversarial checking before anyone acts on it - "the deploy succeeded", "this file contains X", "the bug is in function Y", a research conclusion about local state, a reviewer finding. Hand it ONE claim at a time. Do NOT use for open-ended fact gathering (use researcher) or for producing a fix (use builder).'
 tools: Read, Grep, Glob, Bash
 ---
 

@@ -1,6 +1,6 @@
 ---
 name: researcher
-description: Use when a task needs fresh external facts before anything gets planned or built - market research, competitor scans, technical claims, pricing, tool comparisons, "what is the current state of X". Always use as Step 0 before any MoonOps content work. Do NOT use for questions answerable from files already on this machine (use Read/Grep directly) or for checking a single specific claim (use verifier).
+description: 'Use when a task needs fresh external facts before anything gets planned or built - market research, competitor scans, technical claims, pricing, tool comparisons, "what is the current state of X". Always use as Step 0 before any MoonOps content work. Do NOT use for questions answerable from files already on this machine (use Read/Grep directly) or for checking a single specific claim (use verifier).'
 tools: WebSearch, WebFetch, Read, Grep, Glob, Bash
 ---
 

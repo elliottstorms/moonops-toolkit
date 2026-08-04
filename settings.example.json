@@ -67,9 +67,43 @@
       }
     ]
   },
+  "enabledPlugins": {
+    "stripe@claude-plugins-official": true,
+    "taste-skill@taste-skill": true,
+    "impeccable@impeccable": true,
+    "small-business@inline": false,
+    "design@inline": false,
+    "adspirer-ads-agent@inline": false,
+    "postiz@inline": false,
+    "marketing@inline": false,
+    "sales@inline": false,
+    "product-management@inline": false,
+    "legal@inline": false,
+    "fastly-agent-toolkit@inline": false,
+    "monday-com@inline": false,
+    "product-tracking-skills@inline": false,
+    "cowork-plugin-management@inline": false,
+    "engineering@inline": false,
+    "pdf-viewer@inline": false,
+    "plugin_01AYHYqVLaZRH2Vi6aHgDwEw@inline": false
+  },
+  "extraKnownMarketplaces": {
+    "taste-skill": {
+      "source": {
+        "source": "github",
+        "repo": "leonxlnx/taste-skill"
+      }
+    },
+    "impeccable": {
+      "source": {
+        "source": "github",
+        "repo": "pbakaus/impeccable"
+      }
+    }
+  },
   "skipWorkflowUsageWarning": true,
   "theme": "dark",
-  "enabledPlugins": {
-    "stripe@claude-plugins-official": true
+  "permissions": {
+    "defaultMode": "auto"
   }
 }

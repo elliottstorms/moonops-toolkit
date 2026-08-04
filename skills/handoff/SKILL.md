@@ -1,6 +1,6 @@
 ---
 name: handoff
-description: Produce a dispatch handoff — capture in-flight work, lock the decisions already made, and stage a paste-ready spec in ~/Claude/Handoffs/inbox/ for a fresh session or Claude Code to execute. Use when the user says "create a handoff", "stage this for a new session", "hand this off to Code", or "stage what I need for my credit reset / pass 1 of 2".
+description: 'Produce a dispatch handoff — capture in-flight work, lock the decisions already made, and stage a paste-ready spec in ~/Claude/Handoffs/inbox/ for a fresh session or Claude Code to execute. Use when the user says "create a handoff", "stage this for a new session", "hand this off to Code", or "stage what I need for my credit reset / pass 1 of 2".'
 ---
 
 # Handoff — capture state, lock decisions, stage a dispatch

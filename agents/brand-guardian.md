@@ -1,6 +1,6 @@
 ---
 name: brand-guardian
-description: Use when ANY MoonOps artifact is about to ship - a site page, YouTube title/description, thumbnail spec, dashboard, or briefing card - to check it against the design system and brand gates before it goes out. This is the design lead's design veto, operationalized. Do NOT use for functional defects (reviewer), factual claims (verifier), or making the fixes it demands (builder).
+description: "Use when ANY MoonOps artifact is about to ship - a site page, YouTube title/description, thumbnail spec, dashboard, or briefing card - to check it against the design system and brand gates before it goes out. This is the design lead's design veto, operationalized. Do NOT use for functional defects (reviewer), factual claims (verifier), or making the fixes it demands (builder)."
 tools: Read, Grep, Glob, Bash
 ---
 

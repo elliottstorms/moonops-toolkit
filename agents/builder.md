@@ -1,6 +1,6 @@
 ---
 name: builder
-description: Use when files need to change - implement a feature, fix a bug, edit site pages, update a script or config. Hand it a concrete change spec ("make X do Y in file Z"), not an open question. Do NOT use for gathering facts (researcher), checking a single claim (verifier), or judging finished work (reviewer, brand-guardian).
+description: 'Use when files need to change - implement a feature, fix a bug, edit site pages, update a script or config. Hand it a concrete change spec ("make X do Y in file Z"), not an open question. Do NOT use for gathering facts (researcher), checking a single claim (verifier), or judging finished work (reviewer, brand-guardian).'
 tools: Read, Write, Edit, Glob, Grep, Bash
 ---
 

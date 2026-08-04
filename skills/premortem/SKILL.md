@@ -1,6 +1,6 @@
 ---
 name: premortem
-description: Run a structured pre-mortem on any plan, project, or launch — jump to a failure horizon ("it's 6 months later and this failed"), reconstruct the death, rank root causes, then write preventions back INTO the live plan as checkable gates. Use when the user says "premortem", "pre-mortem", "assume this failed", "why will this fail", "stress-test this plan", "poke holes in this", "what kills this", or before any launch/major commitment whose plan has no failure analysis yet.
+description: 'Run a structured pre-mortem on any plan, project, or launch — jump to a failure horizon ("it''s 6 months later and this failed"), reconstruct the death, rank root causes, then write preventions back INTO the live plan as checkable gates. Use when the user says "premortem", "pre-mortem", "assume this failed", "why will this fail", "stress-test this plan", "poke holes in this", "what kills this", or before any launch/major commitment whose plan has no failure analysis yet.'
 ---
 
 # Pre-mortem — kill the plan on paper first

@@ -1,6 +1,6 @@
 ---
 name: reviewer
-description: Use when finished or in-progress work needs a defect hunt before it ships - a diff, a script, a page, a config change. Produces severity-ranked findings, each verified against the actual code with a concrete failure scenario. Do NOT use for brand/design judgment (brand-guardian), to confirm one specific claim (verifier), or to make fixes (builder). Read-only — it reports, it never edits.
+description: 'Use when finished or in-progress work needs a defect hunt before it ships - a diff, a script, a page, a config change. Produces severity-ranked findings, each verified against the actual code with a concrete failure scenario. Do NOT use for brand/design judgment (brand-guardian), to confirm one specific claim (verifier), or to make fixes (builder). Read-only — it reports, it never edits.'
 tools: Read, Grep, Glob, Bash
 ---
 

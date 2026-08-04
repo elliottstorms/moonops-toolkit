@@ -1,6 +1,6 @@
 ---
 name: site-check
-description: Pre-deploy audit for the moonops.org site (or any static HTML site with a .site-check.json). Checks link integrity, nav parity across pages, OG tags, required/forbidden strings (canonical LinkedIn URL), sitemap coverage, and one-page resume. Use whenever the user says "check the site", "pre-deploy audit", "audit my links", "is the site ready to ship", or before any deploy of site HTML.
+description: 'Pre-deploy audit for the moonops.org site (or any static HTML site with a .site-check.json). Checks link integrity, nav parity across pages, OG tags, required/forbidden strings (canonical LinkedIn URL), sitemap coverage, and one-page resume. Use whenever the user says "check the site", "pre-deploy audit", "audit my links", "is the site ready to ship", or before any deploy of site HTML.'
 ---
 
 # Site Check — deterministic pre-deploy audit

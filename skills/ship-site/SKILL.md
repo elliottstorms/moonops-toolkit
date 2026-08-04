@@ -1,6 +1,6 @@
 ---
 name: ship-site
-description: End-to-end ship pipeline for moonops.org — audit, fix, commit, push, then verify the live deploy is byte-identical and every check passes. Use when the user says "ship the site", "deploy my changes", "push the site live", or after finishing site edits in ~/Claude/Projects/moonops/site/.
+description: 'End-to-end ship pipeline for moonops.org — audit, fix, commit, push, then verify the live deploy is byte-identical and every check passes. Use when the user says "ship the site", "deploy my changes", "push the site live", or after finishing site edits in ~/Claude/Projects/moonops/site/.'
 ---
 
 # Ship Site — audit → push → verify live
