@@ -86,7 +86,7 @@ curl -sS -o /dev/null -D - "https://www.moonops.org/" | grep -iE "^cache-control
 For a `pagecount.ts` change, exercise it and re-pull the counter. **Netlify Blobs is
 eventually consistent: a write took 30 to 60 seconds to surface through `/api/stats`
 (2026-07-27).** Pull immediately and the stale read looks like the code is broken. Fire the
-request, wait a full minute, then `site-analytics/pull_stats.sh`.
+request, wait a full minute, then `sh /Users/you/Claude/Projects/moonops/site-analytics/pull_stats.sh`.
 
 PASS + "live: IN SYNC" = proven shipped. On MISMATCH after the wait:
 - Check the deploy state: open https://app.netlify.com/projects/your-netlify-project/deploys

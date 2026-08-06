@@ -382,14 +382,19 @@ def run_audit(repo, cfg, live, wait, as_json, offline=False):
             for n in needles:
                 if n not in content:
                     add(FAIL, "strings", "%s: required string absent: %r" % (page, n))
+    # Case-INSENSITIVE, unlike required_strings above. A forbidden string is usually a
+    # person's name or a term that must never ship, and a lowercase spelling sliding past
+    # a check that only knows the capitalized one is a silent hole in the single guard
+    # whose whole job is catching it. Only the forbidden side changed (2026-08-06):
+    # required_strings are canonical URLs and exact copy, where casing is part of the value.
     for key, needles in (cfg.get("forbidden_strings") or {}).items():
         for page in targets_for(key):
             fp = os.path.join(site_dir, page)
             if not os.path.isfile(fp):
                 continue
-            content = open(fp, encoding="utf-8", errors="replace").read()
+            content = open(fp, encoding="utf-8", errors="replace").read().lower()
             for n in needles:
-                if n in content:
+                if n.lower() in content:
                     add(FAIL, "strings", "%s: FORBIDDEN string present: %r" % (page, n))
 
     # ---- sitemap / robots ----

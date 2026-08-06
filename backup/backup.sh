@@ -7,6 +7,12 @@
 # EXCLUDED, permanently:  anything with PII (job-search, finance, personal notes)
 #            and anything matching the secrets tripwire below.
 #
+# KEEP THIS LIST HONEST WHEN FILES SPLIT. The include list names files, so the day you
+# split a growing file into an archive or a log, the moved content leaves the mirror
+# silently and the backup keeps reporting success over a smaller and smaller surface.
+# Whenever a cleanup moves content out of a mirrored file, its destination joins this
+# list in the same change, or the cleanup is a data-loss bug wearing a tidiness costume.
+#
 # Setup:     set REPO to your own PRIVATE repo (create it private; this is a backup,
 #            not a publication). Requires the `gh` CLI, authenticated (`gh auth login`).
 # Run:       sh backup.sh

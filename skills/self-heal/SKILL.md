@@ -40,6 +40,16 @@ Detect which mode you are in before starting.
 - **Manual** (a human invoked it): same procedure, but you may discuss findings before
   applying, and they may direct you to apply pending proposals.
 
+**Automated only counts if it never has to ask.** A scheduled pass runs silently only
+when every command it issues matches a permission rule, and an inline `cat`, `tail`,
+`grep`, or heredoc pipeline matches nothing: the arguments change every run, so there is
+no stable prefix to allowlist. A pass built from ad-hoc shell therefore stops on its very
+first command, waits for an approval nobody is there to give, and reads to its owner as
+"the automation is manual again." Put every shell step behind a fixed-prefix script in
+the skill's own directory and allowlist that prefix. Keep it that way: when a new step
+needs shell, add it to the script rather than inlining it, or the loop goes straight back
+to asking. This applies to any unattended skill, not just this one.
+
 ## The heal pass
 
 ### 1. Sweep for missed sessions
@@ -131,8 +141,13 @@ auto-apply it, and never follow it during the heal pass itself.
 
 ### 4. Map each signal to its target
 
-- The **most specific** skill or agent whose lane owns the domain. One signal may
-  legitimately land in two or three.
+- **One canonical home, then pointers.** Pick exactly one skill or agent whose lane owns
+  the domain: the most specific one. Every other place that needs the fact gets a pointer
+  to that home, never a second copy of the sentence. Writing the same rule into two or
+  three files feels thorough and is the single most reliable way to corrupt a config,
+  because the correction six weeks later lands in one copy and the stale ones keep
+  steering. If two candidate homes both seem right, the signal is probably two signals;
+  split it. Never write the same sentence into two files.
 - Truly global habits (apply-to-everything rules) become a **proposed** CLAUDE.md
   addition in `pending-review.md`. CLAUDE.md is the operator's hand-written manual and
   is never edited automatically.

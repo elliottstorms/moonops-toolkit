@@ -1,6 +1,6 @@
 ---
 name: audiocast
-description: Turn ANY script or text into a clean, shareable audio file (mp3), fully offline on macOS via the built-in `say` engine. Use when the user says "make this a shareable audio file", "turn this into audio / an mp3 / a voiceover / a podcast", "read this aloud", or "voice this script", or hands over text and wants to hear it or send it to someone.
+description: 'Turn ANY script or text into a clean, shareable audio file (mp3), fully offline on macOS via the built-in `say` engine. Use when the user says "make this a shareable audio file", "turn this into audio / an mp3 / a voiceover / a podcast", "read this aloud", or "voice this script", or hands over text and wants to hear it or send it to someone.'
 ---
 
 # Audiocast - any script to a shareable audio file
@@ -32,6 +32,14 @@ TTS reads **literally**, so strip anything the ear cannot parse and make symbols
 ## Step 3 - Render (pick voice and format first)
 
 Defaults: voice = best installed (falls back to **Samantha**), format = **mp3**, loudness-normalized so it sounds consistent wherever it plays. Override only on request ("British voice", "faster", "make it an m4a").
+
+**On voice quality, learned the hard way.** The offline default above is what makes this skill work with no accounts and no network, and that is worth keeping. But `say`'s stock voices, Samantha above all, sound conspicuously synthetic to anyone who has heard a current neural voice, and audio you intend to *share* is exactly where that shows. If the network is acceptable for your use, render with a neural voice instead and treat the offline path as the fallback rather than the target:
+
+```bash
+python3 -m edge_tts --voice en-US-AvaNeural --text "..." --write-media out.mp3
+```
+
+Pick the default deliberately and write it down, because this is a setting people set once and then never revisit while quietly disliking every file it produces.
 
 ```bash
 ~/.claude/skills/audiocast/render_audio.sh -i "path/to/script.txt" -t "Title For Sharing"

@@ -11,7 +11,12 @@ executes exactly ONE — the newest — start-to-finish. The contract: honor eve
 finish the Spec, prove it, record the outcome, log any external effect, file it under `done/`.
 Convention doc: `~/Claude/Handoffs/README.md`.
 
-## Step 1 — Find the newest dispatch (gate: one exists, or stop)
+## Step 1: Find the target dispatch (gate: one exists, or stop)
+
+**If the user named a specific file** (a path or filename under `~/Claude/Handoffs/inbox/`),
+that file is the target: use it directly, skipping the newest-only lookup below.
+
+**Otherwise, take the newest:**
 
 ```bash
 ls -t ~/Claude/Handoffs/inbox/*.md 2>/dev/null | head -1

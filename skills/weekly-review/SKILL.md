@@ -1,6 +1,6 @@
 ---
 name: weekly-review
-description: Run the weekly review; gather live data from every active workstream, fill the weekly-review template, update the task list, and surface the top 3 for next week. Includes gated quarterly proofs (restore drill, backup tripwire self-test). Use when the user says "weekly review", "how did this week go", "wrap up the week", or on a Friday/Sunday cadence ask.
+description: 'Run the weekly review; gather live data from every active workstream, fill the weekly-review template, update the task list, and surface the top 3 for next week. Includes gated quarterly proofs (restore drill, backup tripwire self-test). Use when the user says "weekly review", "how did this week go", "wrap up the week", or on a Friday/Sunday cadence ask.'
 ---
 
 # Weekly review, the operating cadence
@@ -14,6 +14,14 @@ tripwires you have set for yourself.
 
 Adapt this list to your own sources; the shape is what matters. Every number in the
 review has a file behind it.
+
+**If this review ever runs unattended, put the whole gather behind one script** in this
+skill's directory and allowlist that fixed prefix, rather than issuing the commands below
+inline. Ad-hoc shell matches no permission rule, so an unattended run stalls on approvals
+nobody is there to give and files a review with half its sources marked "no data" while
+still reporting success. Have the script print each source under a `== NAME ==` header and
+print `no data: <reason>` for a dead source so the run continues. The self-heal skill
+explains the reasoning in full.
 
 1. **The task list**: done versus open, per section. Note anything that slipped multiple
    weeks running.
