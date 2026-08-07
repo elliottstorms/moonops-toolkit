@@ -387,8 +387,12 @@ def run_audit(repo, cfg, live, wait, as_json, offline=False):
     # a check that only knows the capitalized one is a silent hole in the single guard
     # whose whole job is catching it. Only the forbidden side changed (2026-08-06):
     # required_strings are canonical URLs and exact copy, where casing is part of the value.
+    # Also unlike required_strings: "*" sweeps EVERY .html under site_dir (the find_pages
+    # walk in `actual`, which recurses into subdirs like drafts/), not just registered
+    # pages. An unregistered file must not slip past the tripwire by not being in the
+    # config yet; registration only gets a WARN elsewhere, and a WARN exits 0.
     for key, needles in (cfg.get("forbidden_strings") or {}).items():
-        for page in targets_for(key):
+        for page in (actual if key == "*" else [key]):
             fp = os.path.join(site_dir, page)
             if not os.path.isfile(fp):
                 continue
