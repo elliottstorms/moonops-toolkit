@@ -7,7 +7,7 @@ description: 'Execute the newest staged dispatch in ~/Claude/Handoffs/inbox/ sta
 
 The counterpart to `/handoff`. A dispatch is a filled copy of
 `~/Claude/Toolkit/templates/dispatch-request.md` staged in `~/Claude/Handoffs/inbox/`. This skill
-executes exactly ONE: the newest: start-to-finish. The contract: honor every locked decision,
+executes exactly ONE, the newest, start-to-finish. The contract: honor every locked decision,
 finish the Spec, prove it, record the outcome, log any external effect, file it under `done/`.
 Convention doc: `~/Claude/Handoffs/README.md`.
 

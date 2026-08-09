@@ -1,6 +1,6 @@
 ---
 name: restore-drill
-description: "Prove the backup actually restores: clone the private GitHub mirror to a temp dir and diff it against the live sources (skills, agents, bin, CLAUDE.md, settings, Toolkit, TASKS.md, memory). An untested backup is a hope, not a backup. Use when the user says 'restore drill', 'prove the backup', 'test the backup', 'would the backup actually work', or on a quarterly cadence: and after any change to backup.sh's include list or tripwire."
+description: "Prove the backup actually restores: clone the private GitHub mirror to a temp dir and diff it against the live sources (skills, agents, bin, CLAUDE.md, settings, Toolkit, TASKS.md, memory). An untested backup is a hope, not a backup. Use when the user says 'restore drill', 'prove the backup', 'test the backup', 'would the backup actually work', or on a quarterly cadence, and after any change to backup.sh's include list or tripwire."
 ---
 
 # Restore drill: prove the backup restores
@@ -20,7 +20,7 @@ sh ~/.claude/skills/restore-drill/restore_drill.sh
 - `drift:` lines: files that differ between live and the cloud mirror. This is
   NORMAL for anything edited since the last 17:30 backup; check the timestamps
   it prints. Only flag drift as a problem when a file changed BEFORE the last
-  backup ran and still differs (that means the mirror is missing something: 
+  backup ran and still differs (that means the mirror is missing something, so
   check backup.sh's include list and rsync excludes).
 - Clone failure: check `gh auth status` and network before anything else.
 

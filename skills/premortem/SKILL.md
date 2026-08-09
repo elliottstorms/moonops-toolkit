@@ -6,7 +6,7 @@ description: 'Run a structured pre-mortem on any plan, project, or launch: jump 
 # Pre-mortem: kill the plan on paper first
 
 Prospective hindsight: declaring failure as an accomplished fact unlocks specific causes that
-"what might go wrong?" never surfaces (Klein's technique). The deliverable is NOT the document: 
+"what might go wrong?" never surfaces (Klein's technique). The deliverable is NOT the document;
 it's the **diff to the live plan**. A pre-mortem that produces prose but changes no gate, task,
 or calendar entry has failed.
 
@@ -22,7 +22,7 @@ or calendar entry has failed.
    causes outrank contributors. Demand specificity: each cause must be falsifiable and name the
    missing artifact or behavior ("zero distribution milestones existed" ✓; "didn't market
    enough" ✗). Include the **human causes**: attention budgets, competing priorities,
-   incentive gaps, how the operator emotionally reads early numbers: and check them against
+   incentive gaps, how the operator emotionally reads early numbers, and check them against
    the user's documented blind spots (CLAUDE.md); plans rarely die of mechanics alone.
 4. **Steelman what went right.** One section. It keeps the exercise honest, protects the parts
    that shouldn't change, and makes the criticism land as analysis instead of doom.

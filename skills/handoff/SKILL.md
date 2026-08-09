@@ -59,7 +59,7 @@ Edit the new file top to bottom. Delete the template's `<!-- guidance -->` comme
 Rules while filling:
 
 - Lock a decision by moving it into the ✅ list. Anything left unlocked becomes the receiver's
-  judgment call: so lock everything you have already settled.
+  judgment call, so lock everything you have already settled.
 - Every path is absolute. The receiver is a fresh session with none of your context.
 - The copy block is paste-ready. If a value is still unknown, either fill it or move it to
   Needs-from-owner: never leave a placeholder inside the copy block.
