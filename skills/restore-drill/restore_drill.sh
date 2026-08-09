@@ -34,6 +34,18 @@ filter_empty_dirs() {
 check() {  # check <live-path> <mirror-subpath> [extra diff excludes...]
   live="$1"; sub="$2"; shift 2
   [ -e "$live" ] || { echo "skip (no live source): $live"; return 0; }
+  # Same empty-dir rule as filter_empty_dirs, but for a whole scope. When the
+  # live dir is empty the mirror has no such path at all, so `diff -rq` fails
+  # with "No such file or directory" instead of emitting "Only in" lines, and
+  # the filter below never sees it. Absence is the faithful representation of an
+  # empty dir, not data loss. Without this the scope reports drift on every run
+  # forever and the drill can never go green, which is how a check stops being
+  # read. Still reports drift when the live dir HAS content and the mirror does
+  # not: that is a real gap in backup.sh's include list.
+  if [ -d "$live" ] && [ -z "$(ls -A "$live" 2>/dev/null)" ] && [ ! -e "$T/mirror/$sub" ]; then
+    echo "match: $sub (live dir empty; git cannot track empty dirs)"
+    return 0
+  fi
   if [ -d "$live" ]; then
     out=$(diff -rq "$@" "$live" "$T/mirror/$sub" 2>&1 \
           | grep -v -E '\.DS_Store|__pycache__|\.pyc|\.log|\.tmp|\.backup-needed' \
