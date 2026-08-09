@@ -1,0 +1,41 @@
+name: gitleaks
+# History-aware secret scanning.
+#
+# The tripwire inside backup.sh inspects only the content staged for the CURRENT
+# commit. This workflow scans the FULL git history on every push, so a secret that
+# ever slipped through is surfaced instead of sitting quietly in an old commit.
+# The two are complements, not duplicates: keep both.
+#
+# Pairs with backup.sh: set SCAN_WORKFLOW="gitleaks" there and the backup will
+# confirm this workflow actually ran and passed after each push, rather than
+# assuming it did. A secret scanner that fails quietly is worse than none.
+#
+# LICENSE NOTE: repos owned by a PERSONAL account need no license key. Repos owned
+# by an ORGANIZATION need a free key from gitleaks.io, stored as the repo or org
+# secret GITLEAKS_LICENSE. Without it the job fails on org-owned repos.
+#
+# VERSION NOTE: v3 moved the action runtime to Node 24. Do not pin back to v2:
+# GitHub removes Node 20 from its hosted runners on 2026-09-16, at which point
+# v2 stops working. v3 requires runner v2.327.1 or later.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+  # Add `pull_request:` if this repo takes PRs, and a `schedule:` cron if you want
+  # a scan even during quiet weeks. A backup mirror usually needs neither.
+
+permissions:
+  contents: read
+
+jobs:
+  scan:
+    name: gitleaks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0   # required: a shallow clone cannot scan history
+      - uses: gitleaks/gitleaks-action@v3
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}   # org-owned repos only

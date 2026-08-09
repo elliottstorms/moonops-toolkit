@@ -1,9 +1,9 @@
 ---
 name: ship-site
-description: 'End-to-end ship pipeline for moonops.org — audit, fix, commit, push, then verify the live deploy is byte-identical and every check passes. Use when the user says "ship the site", "deploy my changes", "push the site live", or after finishing site edits in ~/Claude/Projects/moonops/site/.'
+description: 'End-to-end ship pipeline for moonops.org: audit, fix, commit, push, then verify the live deploy is byte-identical and every check passes. Use when the user says "ship the site", "deploy my changes", "push the site live", or after finishing site edits in ~/Claude/Projects/moonops/site/.'
 ---
 
-# Ship Site — audit → push → verify live
+# Ship Site: audit → push → verify live
 
 moonops.org auto-deploys from GitHub: pushing `main` deploys (Netlify project
 `your-netlify-project`, publish dir `site/`, config in root `netlify.toml`,
@@ -17,7 +17,7 @@ until 2026-07-27, when a counter fix had to be shipped out of scope. Never `git 
 outside these during this pipeline; if other paths have changes (moonops-rain/,
 site-analytics/ etc.), mention in one line that they exist and are not shipping.
 
-## Step 0 — Pre-flight drift check (before editing anything)
+## Step 0: Pre-flight drift check (before editing anything)
 
 ```bash
 python3 ~/.claude/skills/site-check/site_audit.py --repo ~/Claude/Projects/moonops --live
@@ -25,9 +25,9 @@ python3 ~/.claude/skills/site-check/site_audit.py --repo ~/Claude/Projects/moono
 
 If this MISMATCHes while the repo is clean and pushed, the live site has drifted from the
 repo (someone re-enabled Netlify Asset Optimization, or deployed from another source).
-STOP and tell the user — do not proceed, do not edit local files to match live.
+STOP and tell the user: do not proceed, do not edit local files to match live.
 
-## Step 1 — Snapshot what will ship
+## Step 1: Snapshot what will ship
 
 ```bash
 cd ~/Claude/Projects/moonops
@@ -40,7 +40,7 @@ Tell the user in one short list what is about to ship: changed in-scope files (o
 each on what changed) AND any already-committed-but-unpushed commits (those ship too).
 If anything in scope was NOT work they asked for, stop and ask.
 
-## Step 2 — Local audit (gate: exit code 0)
+## Step 2: Local audit (gate: exit code 0)
 
 ```bash
 python3 ~/.claude/skills/site-check/site_audit.py --repo ~/Claude/Projects/moonops
@@ -51,7 +51,7 @@ python3 ~/.claude/skills/site-check/site_audit.py --repo ~/Claude/Projects/moono
 - If the same item still fails after 2 fix attempts, or a fix would remove content, stop
   and ask the user. Do not proceed on a failing audit. No exceptions.
 
-## Step 3 — Commit + push (this deploys)
+## Step 3: Commit + push (this deploys)
 
 ```bash
 cd ~/Claude/Projects/moonops
@@ -65,14 +65,14 @@ git push
   read its output (same audit), fix, push again. Never use `--no-verify` unless the user
   explicitly says so.
 
-## Step 4 — Verify the live deploy (gate: IN SYNC)
+## Step 4: Verify the live deploy (gate: IN SYNC)
 
 ```bash
 python3 ~/.claude/skills/site-check/site_audit.py --repo ~/Claude/Projects/moonops --live --wait 180
 ```
 
 **Run with a Bash timeout of at least 240000ms (or in the background). The command prints
-nothing until polling finishes — silence is normal, do not kill and retry.**
+nothing until polling finishes: silence is normal, do not kill and retry.**
 
 **This gate proves the HTML and nothing else.** Byte-parity compares page bytes, so a
 `netlify.toml` header change or an edge-function change passes it while doing nothing, or
@@ -94,9 +94,9 @@ PASS + "live: IN SYNC" = proven shipped. On MISMATCH after the wait:
 - If live content looks like an older or differently-formatted revision: the Netlify site
   is not building from origin/main, or post-processing was re-enabled. Report to the user;
   do not retry blindly; do not edit local files to match live.
-- Network sanity: `curl -sI https://www.moonops.org` — any response means the network is fine.
+- Network sanity: `curl -sI https://www.moonops.org`: any response means the network is fine.
 
-## Step 5 — Report
+## Step 5: Report
 
 Give the user: what shipped (Step 1 list), audit result, live-parity result, commit hash.
 Rollback if ever needed: tell the user to open Netlify → Deploys → pick the previous
@@ -112,7 +112,7 @@ deploy → "Publish deploy" (one click, instant).
 | Push rejected by hook | Read hook output (same audit); fix and retry |
 | Live MISMATCH after wait | Netlify deploys page (link above); report, don't retry blindly |
 | Live fetch errors | `curl -sI https://www.moonops.org`; check https://www.netlifystatus.com; report |
-| Deploy fails "unrecognized Git contributor" | your GitHub isn't linked as a Netlify Git Contributor (free-plan rule for private repos). Only the account owner can fix it: https://app.netlify.com/teams/YOUR_TEAM/contributors → Edit settings → GitHub Connect (OAuth popup). Retrying without that fix is pointless — even UI-triggered builds fail. |
+| Deploy fails "unrecognized Git contributor" | your GitHub isn't linked as a Netlify Git Contributor (free-plan rule for private repos). Only the account owner can fix it: https://app.netlify.com/teams/YOUR_TEAM/contributors → Edit settings → GitHub Connect (OAuth popup). Retrying without that fix is pointless: even UI-triggered builds fail. |
 
 ## Reverse-loop: log to STATUS.md
 

@@ -20,10 +20,15 @@
 set -eu
 export PATH="/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin"
 
-# --- configure these two lines ---
+# --- configure these ---
 REPO="your-username/your-private-backup-repo"     # PRIVATE repo
 STAGE="$HOME/.claude-backup/stage"                # local staging mirror
-# ---------------------------------
+# Name of a history-aware secret-scanning workflow in that repo (the `name:` field
+# of the workflow YAML). This kit ships one at .github/workflows/gitleaks.yml, so
+# copy that into your backup repo and set this to "gitleaks" to turn the post-push
+# verification on. Leave it empty to skip that check entirely.
+SCAN_WORKFLOW=""
+# -----------------------
 
 LOG="$HOME/.claude-backup/backup.log"
 mkdir -p "$STAGE" "$(dirname "$LOG")"
@@ -75,3 +80,43 @@ CHANGED=$(git diff --cached --stat | tail -1)
 git commit -q -m "backup: $(date '+%Y-%m-%d %H:%M'), $CHANGED"
 git push -q -u origin main
 say "backed up + pushed: $CHANGED"
+
+# ---- confirm the history-aware secret scan actually ran and passed ----
+# The tripwire above inspects only THIS commit's staged content. A workflow in the
+# repo is what scans the FULL history, and it is easy to never notice when that
+# workflow stops firing: a provider incident, a renamed action, a revoked token,
+# and the only history-aware scan you have is silently off while the backup keeps
+# reporting success. A secret scanner that fails quietly is worse than none,
+# because it is trusted. NON-FATAL by design: the mirror is already pushed and
+# safe on disk, so this only ever reports. It never fails the backup.
+if [ -n "$SCAN_WORKFLOW" ]; then
+  if ! command -v gh >/dev/null 2>&1; then
+    say "warn: scan result unverified (gh CLI not on PATH)"
+  elif ! gh auth status >/dev/null 2>&1; then
+    say "warn: scan result unverified (gh not authenticated)"
+  else
+    PUSHED_SHA=$(git rev-parse HEAD)
+    SHORT=$(echo "$PUSHED_SHA" | cut -c1-7)
+    SCAN=""
+    for _ in 1 2 3 4 5 6 7 8 9 10; do
+      sleep 12
+      SCAN=$(gh run list --repo "$REPO" --limit 20 \
+               --json headSha,status,conclusion,workflowName \
+               --jq ".[] | select(.headSha==\"$PUSHED_SHA\" and .workflowName==\"$SCAN_WORKFLOW\") | \"\(.status)/\(.conclusion)\"" \
+             2>/dev/null | head -1)
+      case "$SCAN" in
+        completed/*) break ;;
+      esac
+    done
+    case "$SCAN" in
+      completed/success)
+        say "secret scan: PASS on $SHORT (full history clean)" ;;
+      completed/*)
+        say "ALERT: secret scan did NOT pass on $SHORT ($SCAN). History-aware scanning is DOWN. Check: gh run list --repo $REPO" ;;
+      "")
+        say "ALERT: NO scan run exists for $SHORT. The push landed but the workflow never fired, so nothing scanned this history. Re-run: gh workflow run \"$SCAN_WORKFLOW\" --repo $REPO --ref main" ;;
+      *)
+        say "warn: secret scan still $SCAN on $SHORT after ~2min, not waiting longer" ;;
+    esac
+  fi
+fi
