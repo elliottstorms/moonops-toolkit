@@ -105,5 +105,10 @@
   "theme": "dark",
   "permissions": {
     "defaultMode": "auto"
+  },
+  "skillOverrides": {
+    "moonops-video": "off",
+    "stella-cast": "off",
+    "writeup": "off"
   }
 }
