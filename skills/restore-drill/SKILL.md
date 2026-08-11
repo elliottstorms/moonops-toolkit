@@ -36,7 +36,7 @@ whether the machine that keeps them current still runs. Pair it with:
 bash ~/.claude/skills/self-heal/selftest.sh
 ```
 
-28 checks over the self-heal chain (capture hook, both content-age gates, the
+29 checks over the self-heal chain (capture hook, both content-age gates, the
 trust boundary, atomic state writes, managed-block marker balance). It restores
 its own state on exit and is safe to run beside the drill. Report both results
 together: a green backup with a red selftest means you are faithfully preserving

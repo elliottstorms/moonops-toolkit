@@ -147,6 +147,17 @@ DUPSTAT=$(awk '
   END             { if (blk!="" && n>1) print blk }
 ' "$ROOT/pending-review.md" 2>/dev/null)
 [ -z "$DUPSTAT" ] && ok "one Status line per proposal block" || bad "dual Status lines in: $(echo "$DUPSTAT" | tr '\n' ';')"
+# One `## Proposal N` heading per proposal number. Closing a proposal used to add
+# an APPLIED heading and leave the original under a second `## Proposal N`, and the
+# banner counter reads `## ` headings, so the preserved copy read open forever: the
+# count grew by one per proposal applied and hit 6 against a true 0 on 2026-08-09.
+# A preserved original belongs at `### Proposal N, original finding` (SKILL.md §6).
+DUPHEAD=$(awk '
+  /^## Proposal / { id=$3; gsub(/[^0-9A-Za-z]/,"",id); cnt[id]++ }
+  END            { for (i in cnt) if (cnt[i]>1) printf "%s ", i }
+' "$ROOT/pending-review.md" 2>/dev/null)
+[ -z "$DUPHEAD" ] && ok "one '## Proposal N' heading per proposal number" \
+                  || bad "duplicate '## Proposal N' headings for: $DUPHEAD(preserved originals belong at '### ')"
 # The banner counter itself, against fixtures covering both stale-banner
 # directions: closed-reads-open (the 2026-07-23 bug) and reopened-reads-closed
 # (the sticky-dec inverse, fixed 2026-07-28). Runs the LIVE awk from
