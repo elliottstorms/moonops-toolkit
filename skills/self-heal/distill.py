@@ -177,10 +177,40 @@ def main():
     # queue on 2026-07-28 and burned a slot. Match the invariant instead: the
     # literal "in automated mode" tail after a short "run … full …" head. That
     # tail is launcher boilerplate; you do not type it.
+    # Widened 2026-08-20 (Proposal 54 option 4): the good-news launcher says
+    # "Invoke the good-news skill … in Automated mode" — no "run", no "full" —
+    # so the original head missed it and it burned a slot on 2026-08-19 AND
+    # 2026-08-20. Second defect fixed here: the all() test required EVERY typed
+    # message to match, so the harness's own network-interruption boilerplate
+    # ("Your previous response was cut off…"), which appeared as message 2 in
+    # three of those runs, kept the session in even when message 1 was a pure
+    # launcher. Filter that boilerplate out before deciding, rather than
+    # counting it as your voice.
     _launch = re.compile(
-        r"run\s+(?:one\s+|a\s+|the\s+)?full\s+[\w\s-]{0,24}?in\s+automated\s+mode", re.I)
-    if typed and all(_launch.search(t[2]) for t in typed):
+        r"(?:run\s+(?:one\s+|a\s+|the\s+)?full\s+[\w\s-]{0,24}?"
+        r"|invoke\s+the\s+[\w-]{1,32}\s+skill\b[\s\S]{0,120}?)"
+        r"in\s+automated\s+mode", re.I)
+    _harness = re.compile(
+        r"your previous response was cut off|continue exactly where the run left off", re.I)
+    _signal = [t for t in typed if not _harness.search(t[2])]
+    if _signal and all(_launch.search(t[2]) for t in _signal):
         print("distill: gated (autonomous skill-launcher run, no user signal)", file=sys.stderr)
+        return 3
+
+    # Minimum-substance gate (2026-08-20, Proposal 54 option 4). A session whose
+    # entire human content is a few characters teaches nothing by construction:
+    # on 2026-08-19 four `Reply with exactly: OK` probes and two bare `hi`
+    # sessions were queued, and they took 6 of the 10 slots in the 8/20 pass.
+    # Three conditions together, because the char floor ALONE is not safe —
+    # "back everything up!" is 19 characters and was real, load-bearing evidence
+    # in that same pass. So also require that she invoked no slash command and
+    # that the session did essentially nothing: a probe answers in one turn,
+    # while a short directive of hers sets off a long run of real work. Any one
+    # of the three failing keeps the session in.
+    _typed_chars = sum(len(t[2].strip()) for t in typed)
+    if typed and _typed_chars < 25 and not commands and counts["assistant"] <= 2:
+        print(f"distill: gated (probe session: {_typed_chars} chars typed, "
+              f"no command, {counts['assistant']} assistant turn(s))", file=sys.stderr)
         return 3
 
     # Content-age gate. The sweep must not re-mine history that predates the loop
