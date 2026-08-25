@@ -11,11 +11,17 @@
 f=$(jq -r '.tool_input.file_path // .tool_response.filePath // empty' 2>/dev/null)
 [ -n "$f" ] || exit 0
 
+# Handoffs/ was removed 2026-08-25 on your ruling, "handoffs dont need
+# backups". It had been listed here as a durable asset while backup.sh never
+# mirrored it, so every dispatch save printed "run /backup when ready" for a
+# tree the backup would not have carried anyway. Her ruling settles which side
+# of that contradiction is right: dispatches are disposable working documents
+# with a lifecycle (inbox, then done), not durable assets. Do not re-add.
 case "$f" in
   "$HOME/.claude/skills/"*|"$HOME/.claude/agents/"*|"$HOME/.claude/bin/"*| \
   "$HOME/.claude/CLAUDE.md"|"$HOME/.claude/settings.json"| \
-  "$HOME/Claude/Toolkit/"*|"$HOME/Claude/Scheduled/"*|"$HOME/Claude/Handoffs/"*) ;;
-  *) exit 0 ;;                        # not a durable asset — ignore
+  "$HOME/Claude/Toolkit/"*|"$HOME/Claude/Scheduled/"*) ;;
+  *) exit 0 ;;                        # not a durable asset, ignore
 esac
 
 flag="$HOME/.claude/.backup-needed"

@@ -1,6 +1,6 @@
 <!--
 WHEN TO USE: Handing production work to another session, agent, or person (video build, doc, code batch).
-HOW TO FILL: Lock every decision already made into the ✅ list — the receiver may NOT reopen those.
+HOW TO FILL: Lock every decision already made into the ✅ list: the receiver may NOT reopen those.
 Spec table is the contract; anything not in it is receiver's judgment. Always fill provenance so nobody rebuilds from a stale version.
 -->
 
@@ -17,7 +17,7 @@ Spec table is the contract; anything not in it is receiver's judgment. Always fi
 
 <2-3 sentences. The deliverable, its destination (upload, publish, commit), and the definition of done.>
 
-## Decisions already made — do not reopen
+## Decisions already made, do not reopen
 
 <!-- Settled items. Receiver executes these as-is; objections go back to owner, not into the work. -->
 
@@ -38,22 +38,22 @@ Spec table is the contract; anything not in it is receiver's judgment. Always fi
 
 ## Metadata / copy block
 
-<!-- Paste-ready. Exact strings the producer uses verbatim — titles, descriptions, tags, alt text. -->
+<!-- Paste-ready. Exact strings the producer uses verbatim: titles, descriptions, tags, alt text. -->
 
 ```
-<exact copy, ready to paste — no placeholders left inside this block at dispatch time>
+<exact copy, ready to paste, no placeholders left inside this block at dispatch time>
 ```
 
 ## Needs from owner
 
 <!-- Blockers only the owner can clear. Empty list = producer can run start-to-finish unattended. -->
 
-- [ ] <approval, credential, asset, or decision still outstanding — or "none">
+- [ ] <approval, credential, asset, or decision still outstanding, or "none">
 
 ## Provenance
 
 <!-- Where earlier versions, drafts, and source-of-truth files live. Prevents rebuilding from stale copies. -->
 
 - Source of truth: <path or URL + date>
-- Prior versions: <path(s), or "none — first build">
+- Prior versions: <path(s), or "none, first build">
 - Related research/decision docs: <path(s)>
