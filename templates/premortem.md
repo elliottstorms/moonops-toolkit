@@ -36,8 +36,8 @@ then for each name the earliest signal you'd actually see and the cheapest mitig
 
 <!-- Pull the "do now" column into actual commitments. Unscheduled mitigation = decoration. -->
 
-- [ ] <mitigation 1> — by <date>
-- [ ] <mitigation 2> — by <date>
+- [ ] <mitigation 1>, by <date>
+- [ ] <mitigation 2>, by <date>
 
 ## Review date
 

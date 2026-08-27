@@ -38,7 +38,13 @@ PROPS="$HOME/Claude/daily-sync/claude-md-proposals.md"
 # carries its own header and instructions, so `-s` alone would nag forever. That
 # is the same stale-banner bug the self-heal check hit on 2026-07-18.
 if [ -f "$PROPS" ]; then
-  n=$(grep -c '^## ' "$PROPS" 2>/dev/null)
+  # Count only UNDECIDED blocks. Counting every `## ` heading was the same
+  # stale-banner bug one layer down: decided proposals are deliberately kept in
+  # the file for history and never deleted, so the count froze at 12 and kept
+  # nagging after you had cleared every one of them (2026-08-27). A decided
+  # block stamps its verdict into its own heading, `## [APPLIED ...]` or
+  # `## [CLOSED ...]` or `## [DECIDED ...]`; anything without a bracket is open.
+  n=$(grep '^## ' "$PROPS" 2>/dev/null | grep -vc '^## \[')
   [ -n "$n" ] || n=0
   if [ "$n" -gt 0 ]; then
     echo

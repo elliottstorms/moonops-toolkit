@@ -1,12 +1,12 @@
 <!--
 WHEN TO USE: Any decision with 2+ real options and non-trivial cost (money, hours, or reputation).
 HOW TO FILL: Fill the options table BEFORE picking a favorite. Every option needs evidence, even the one you hate.
-Rank by bang-for-buck (payoff / cost), not by comfort. "What would change my mind" is mandatory — no empty answers.
+Rank by bang-for-buck (payoff / cost), not by comfort. "What would change my mind" is mandatory: no empty answers.
 -->
 
 # Decision memo: <decision in one phrase>
 
-**Date:** <YYYY-MM-DD> · **Deadline:** <YYYY-MM-DD or "none — but decide by X anyway"> · **Decider:** <name>
+**Date:** <YYYY-MM-DD> · **Deadline:** <YYYY-MM-DD or "none, but decide by X anyway"> · **Decider:** <name>
 
 ## Decision needed
 
@@ -26,15 +26,15 @@ Rank by bang-for-buck (payoff / cost), not by comfort. "What would change my min
 
 <!-- One block per option. Cite sources; mark inference as inference. -->
 
-- **A:** <evidence for cost/payoff numbers — source or measurement>
+- **A:** <evidence for cost/payoff numbers, source or measurement>
 - **B:** <evidence>
 - **C:** <evidence>
 
 ## Bang-for-buck ranking
 
-1. <option> — <why it ranks here in one clause>
-2. <option> — <why>
-3. <option> — <why>
+1. <option>: <why it ranks here in one clause>
+2. <option>: <why>
+3. <option>: <why>
 
 ## Recommendation
 

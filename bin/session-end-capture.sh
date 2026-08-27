@@ -49,10 +49,11 @@ TMP=$(mktemp "${TMPDIR:-/tmp}/selfheal.XXXXXX")
 # omitted entirely, preserving the hook's never-block-a-session contract.
 # distill.py additionally fails open on an unparseable cutoff (gated twice).
 CUTOFF=$(python3 -c "import json,sys;print(json.load(open('$ROOT/state.json'))['last_sweep'])" 2>/dev/null)
+ERR=$(mktemp "${TMPDIR:-/tmp}/selfheal-err.XXXXXX")
 python3 "$HOME/.claude/skills/self-heal/distill.py" "$TP" \
   --min-user-msgs 1 --skip-if-first-cmd self-heal \
   ${CUTOFF:+--skip-if-content-before "$CUTOFF"} \
-  > "$TMP" 2>>"$LOG"
+  > "$TMP" 2>"$ERR"
 RC=$?
 
 if [ $RC -eq 0 ] && [ -s "$TMP" ]; then
@@ -60,9 +61,15 @@ if [ $RC -eq 0 ] && [ -s "$TMP" ]; then
   echo "$(ts) queued $SID (reason=$REASON, $(wc -c < "$ROOT/queue/$SID.md" | tr -d ' ') bytes)" >> "$LOG"
 elif [ $RC -eq 3 ]; then
   rm -f "$TMP"
-  echo "$(ts) skip: gated $SID (heal run, no typed user messages, or content pre-dates ${CUTOFF:-<no cutoff>})" >> "$LOG"
+  # distill.py names the specific gate on stderr; carry it onto the SID line so a
+  # grep of this log says WHICH gate fired (heal/scheduled run, probe, no typed
+  # messages, or content before cutoff) instead of a single OR string that cost a
+  # transcript-by-transcript probe to disambiguate (self-heal P58, 2026-08-27).
+  DETAIL=$(sed -n 's/^distill: gated //p' "$ERR" | tail -1)
+  echo "$(ts) skip: gated $SID (${DETAIL:-reason not captured; cutoff ${CUTOFF:-<none>}})" >> "$LOG"
 else
-  rm -f "$TMP"
+  cat "$ERR" >> "$LOG"
   echo "$(ts) ERROR: distill rc=$RC for $SID ($TP)" >> "$LOG"
 fi
+rm -f "$ERR"
 exit 0

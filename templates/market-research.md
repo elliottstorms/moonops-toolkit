@@ -16,10 +16,10 @@ Then answer "so what" and set kill criteria BEFORE you fall in love with the pla
 
 <!-- 3-5 angles. Each must be a runnable query, not a vibe. -->
 
-1. `<exact search query>` — <what this angle tests>
-2. `<exact search query>` — <what this angle tests>
-3. `<exact search query>` — <what this angle tests>
-4. `<exact search query, optional>` — <what this angle tests>
+1. `<exact search query>`: <what this angle tests>
+2. `<exact search query>`: <what this angle tests>
+3. `<exact search query>`: <what this angle tests>
+4. `<exact search query, optional>`: <what this angle tests>
 
 ## Findings
 

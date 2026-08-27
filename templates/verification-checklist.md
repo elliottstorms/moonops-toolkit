@@ -1,6 +1,6 @@
 <!--
 WHEN TO USE: At the END of any session that claims external effects (deploys, uploads, emails sent, files moved, configs changed).
-HOW TO FILL: One row per claim. "How verified" must be reproducible evidence — a command + its output, a URL check, or a screenshot path.
+HOW TO FILL: One row per claim. "How verified" must be reproducible evidence: a command + its output, a URL check, or a screenshot path.
 If you cannot verify it, it goes in the NOT VERIFIABLE table with an exact manual check. Never promote unverified to done.
 -->
 
