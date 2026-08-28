@@ -111,3 +111,5 @@ verified vs not, and any blocker or objection surfaced.
 2. Never reopen a ✅ locked decision: execute as-is, object (if needed) in Outcome.
 3. Verified means a check actually ran: never mark `verified=yes` on assumption.
 4. Every external effect gets a `status-append.sh` line; then the file moves to `done/`.
+
+
