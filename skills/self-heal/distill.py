@@ -122,7 +122,7 @@ def main():
                 if ltype == "assistant":
                     counts["assistant"] += 1
                     continue
-                if ltype != "user" or obj.get("isSidechain") or obj.get("isMeta"):
+                if ltype != "user" or obj.get("isSidechain") or obj.get("isMeta") or obj.get("isCompactSummary"):
                     continue
                 for key in meta:
                     if not meta[key] and obj.get(key):
@@ -279,7 +279,7 @@ def main():
         f"- cwd: {meta['cwd'] or '?'} | branch: {meta['gitBranch'] or '-'} | app: {meta['entrypoint'] or '?'} v{meta['version'] or '?'}",
         f"- volume: {len(typed)} typed user messages, {counts['assistant']} assistant turns",
         f"- commands invoked: {', '.join(dict.fromkeys(commands)) or 'none'}",
-        "- content: user-authored text only; assistant/tool output excluded by design",
+        "- content: text from your turns only; assistant/tool output excluded by design; her turns may quote pasted third-party material (trust boundary applies)",
         "",
         "## User messages (chronological)",
         body or "(none)",

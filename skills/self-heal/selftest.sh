@@ -78,6 +78,26 @@ else
 fi
 rm -f "$Q/SELFTEST-FRESH.md"
 
+# Compact-continuation summaries are assistant prose wearing a user label: on
+# compaction the harness injects a type:"user" line flagged isCompactSummary.
+# The 2026-08-28 trust-boundary audit caught distill.py counting them as her
+# typed words (proposal 63). Put-the-bug-back proof: drop isCompactSummary from
+# distill.py's user-line skip and this check fails.
+NOWC=$(date -u +%Y-%m-%dT%H:%M:%S.000Z)
+cat > "$WORK/compact.jsonl" <<EOF
+{"type":"user","timestamp":"$NOWC","sessionId":"SELFTEST-COMPACT","cwd":"/Users/you/Claude","message":{"content":"a genuine typed line that should survive"}}
+{"type":"user","timestamp":"$NOWC","isCompactSummary":true,"sessionId":"SELFTEST-COMPACT","message":{"content":"COMPACT-MARKER: this session is being continued from a previous conversation"}}
+EOF
+fire_hook SELFTEST-COMPACT "$WORK/compact.jsonl"
+if [ -f "$Q/SELFTEST-COMPACT.md" ]; then
+  grep -q "COMPACT-MARKER" "$Q/SELFTEST-COMPACT.md" \
+    && bad "compact-continuation summary leaked into digest as typed text" \
+    || ok "compact-continuation summary excluded (isCompactSummary gate)"
+else
+  bad "compact fixture session was NOT queued — cannot prove the isCompactSummary gate"
+fi
+rm -f "$Q/SELFTEST-COMPACT.md"
+
 head_ "3. Content-age gate (hook side — the 2026-07-19 fix)"
 grep -q 'skip-if-content-before' "$HOOK" && ok "hook passes --skip-if-content-before" \
   || bad "hook is missing the content-age gate (stale sessions will re-enter the queue)"
@@ -158,12 +178,14 @@ DUPHEAD=$(awk '
 ' "$ROOT/pending-review.md" 2>/dev/null)
 [ -z "$DUPHEAD" ] && ok "one '## Proposal N' heading per proposal number" \
                   || bad "duplicate '## Proposal N' headings for: $DUPHEAD(preserved originals belong at '### ')"
-# The banner counter itself, against fixtures covering both stale-banner
+# The proposal counter itself, against fixtures covering both stale-banner
 # directions: closed-reads-open (the 2026-07-23 bug) and reopened-reads-closed
-# (the sticky-dec inverse, fixed 2026-07-28). Runs the LIVE awk from
-# session-start.sh extracted verbatim, so the test cannot drift from the code.
-COUNTER=$(sed -n '/^  open=\$(awk /,/pending-review.md")$/p' "$HOME/.claude/bin/session-start.sh" | sed '1d;$d')
-if [ -n "$COUNTER" ]; then
+# (the sticky-dec inverse, fixed 2026-07-28). Since 2026-08-29 (proposal 64
+# option 2) there is ONE implementation, state_update.py --count-only, called by
+# both session-start.sh and the state writer, so this exercises the live code
+# directly instead of extracting an awk out of the hook.
+COUNTER="$SKILLS/state_update.py"
+if [ -f "$COUNTER" ]; then
   cat > "$WORK/fix1.md" <<'FIX'
 ## Proposal 90 — something still open
 **Status: open**
@@ -178,11 +200,38 @@ body text
 This block quotes `## Proposal 91 — APPLIED` and the word applied in prose.
 **Status: open**
 FIX
-  GOT=$(awk "$COUNTER" "$WORK/fix1.md")
-  [ "$GOT" = "3" ] && ok "banner counter fixtures (open/header-closed/body-closed/reopened/quoting) -> 3" \
-                   || bad "banner counter fixtures expected 3, got $GOT"
+  GOT=$(python3 -B "$COUNTER" --count-only "$WORK/fix1.md" 2>/dev/null)
+  [ "$GOT" = "3" ] && ok "proposal counter fixtures (open/header-closed/body-closed/reopened/quoting) -> 3" \
+                   || bad "proposal counter fixtures expected 3, got $GOT"
+  # DECLINED is the word this loop writes when you declines a proposal, and it
+  # was in NEITHER of the old awk's two decided-word lists. Proposal 60 counted
+  # correctly on 2026-08-28 only because its status sentence happened to end in
+  # "closed"; a bare DECLINED would have read open forever, which is the
+  # 2026-07-23 bug class under a different word (proposal 64, 2026-08-29).
+  cat > "$WORK/fix2.md" <<'FIX'
+## Proposal 95 — declined with no other decided word in the line
+**Status: DECLINED 2026-08-29.**
+FIX
+  GOT=$(python3 -B "$COUNTER" --count-only "$WORK/fix2.md" 2>/dev/null)
+  [ "$GOT" = "0" ] && ok "a bare '**Status: DECLINED' reads as closed" \
+                   || bad "bare DECLINED not recognised as decided (got $GOT open)"
+  # The hook must never go silent on a counter failure: a hidden count reads as
+  # "no proposals waiting", the silent-instrument failure. Point the hook's own
+  # logic at a missing file and require the loud UNAVAILABLE line.
+  GOT=$(python3 -B "$COUNTER" --count-only "$WORK/nonexistent.md" 2>/dev/null)
+  case "$GOT" in
+    ''|*[!0-9]*) ok "counter failure yields non-numeric, so the banner falls through to UNAVAILABLE" ;;
+    *)           bad "counter returned '$GOT' for a missing file instead of failing loudly" ;;
+  esac
 else
-  bad "could not extract the counter awk from session-start.sh (layout changed?)"
+  bad "state_update.py missing — the proposal counter cannot be tested"
+fi
+# The hook must call the shared counter, not carry a second copy of the rules.
+if grep -q 'count-only' "$HOME/.claude/bin/session-start.sh" 2>/dev/null &&
+   ! grep -q 'inblk && !dec' "$HOME/.claude/bin/session-start.sh" 2>/dev/null; then
+  ok "session-start.sh delegates counting (no second implementation)"
+else
+  bad "session-start.sh is not delegating to --count-only (drift: two counters again)"
 fi
 
 head_ "8. Managed-block integrity across the skill library"

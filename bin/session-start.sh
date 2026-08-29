@@ -146,17 +146,30 @@ fi
 # so the newest marker is authoritative. selftest.sh check 27 enforces the matching
 # file convention: at most one `**Status:` line per proposal block.
 if [ -f "$SH/pending-review.md" ]; then
-  open=$(awk '
-    /^## Proposal / { if (inblk && !dec) open++; inblk=1;
-                      dec=($0 ~ /(APPLIED|REJECTED|DECIDED|RESOLVED|WITHDRAWN|SUPERSEDED)/); next }
-    /^## /          { if (inblk && !dec) open++; inblk=0 }
-    inblk && /^\*\*Status:/ {
-      dec=(tolower($0) ~ /(applied|rejected|resolved|withdrawn|superseded|closed)/) }
-    END             { if (inblk && !dec) open++; print open+0 }
-  ' "$SH/pending-review.md")
-  if [ "$open" -gt 0 ]; then
-    echo
-    echo "== self-heal: $open proposal(s) awaiting you, say 'review the pending self-heal proposals' =="
-  fi
+  # Counting moved OUT of this file 2026-08-29 (proposal 64 option 2). It used to
+  # live here as an awk, and state_update.py grew a second copy of the same rules
+  # so it could derive proposals_open; two implementations of one rule in files
+  # that could not share code is a drift engine, and the awk's own vocabulary was
+  # already wrong (no DECLINED, and two lists that disagreed). One implementation
+  # now, in state_update.py --count-only, which selftest.sh exercises directly.
+  #
+  # Fail-open, three ways, because this is a SessionStart hook and must never
+  # block or lie: python3 missing, script missing, or non-numeric output all fall
+  # through to a LOUD unavailable line rather than a silent skip. A hidden count
+  # would read as "no proposals waiting", which is the silent-instrument failure
+  # this loop has been bitten by before.
+  open=$(python3 -B "$HOME/.claude/skills/self-heal/state_update.py" \
+           --count-only "$SH/pending-review.md" 2>/dev/null)
+  case "$open" in
+    ''|*[!0-9]*)
+      echo
+      echo "== self-heal: proposal count UNAVAILABLE (counter failed); check pending-review.md by hand =="
+      ;;
+    0) : ;;
+    *)
+      echo
+      echo "== self-heal: $open proposal(s) awaiting you, say 'review the pending self-heal proposals' =="
+      ;;
+  esac
 fi
 exit 0
