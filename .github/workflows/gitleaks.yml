@@ -15,8 +15,10 @@ name: gitleaks
 # secret GITLEAKS_LICENSE. Without it the job fails on org-owned repos.
 #
 # VERSION NOTE: v3 moved the action runtime to Node 24. Do not pin back to v2:
-# GitHub removes Node 20 from its hosted runners on 2026-09-16, at which point
-# v2 stops working. v3 requires runner v2.327.1 or later.
+# GitHub removes Node 20 from its hosted runners on 2026-09-23, at which point
+# v2 stops working. v3 requires runner v2.327.1 or later. That date read 09-16
+# here until 2026-09-01 and was wrong by a week; 09-23 comes from GitHub's own
+# changelog, so verify it there rather than against another comment.
 on:
   push:
     branches: [main]
