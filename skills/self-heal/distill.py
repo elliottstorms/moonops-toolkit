@@ -40,6 +40,39 @@ def clean(text):
     return text.strip()
 
 
+def queued_human_prompt(obj):
+    """Return the text of a message you typed while a turn was already running.
+
+    A message typed mid-turn is enqueued, and if the running turn picks it up the
+    harness marks it 'absorbed_mid_turn' and NEVER writes a `type: "user"` row for
+    it. The main loop only reads user rows, so those messages were invisible to
+    this whole learning loop: 126 of them across 53 transcripts on 2026-09-03,
+    including "DO NOT MAKE THAT MISTAKE EVER AGAIN." and "not good to have 400
+    miles quantified". That is a selection bias pointed at exactly the wrong
+    target, because a message she types while Claude is mid-flight is
+    overwhelmingly a correction, which section 3 calls the strongest signal there
+    is. It cost this loop a live mistake: the 2026-09-02 digest carried her "once
+    a week or something" and not the "lets go with once a day" that superseded it
+    ten minutes later, so the 09-03 pass nearly filed a proposal arguing her own
+    settled decision back at her, citing her own words.
+
+    The trust boundary is unchanged, and this is the narrowest possible opening:
+    ONLY `queued_command` attachments carrying `origin.kind == "human"`. Every
+    other attachment type stays excluded, which matters, because siblings in the
+    same stream carry edited-file snippets, skill listings and token reminders,
+    none of which are her voice.
+    """
+    if obj.get("isSidechain") or obj.get("isMeta"):
+        return None
+    att = obj.get("attachment")
+    if not isinstance(att, dict) or att.get("type") != "queued_command":
+        return None
+    if (att.get("origin") or {}).get("kind") != "human":
+        return None
+    prompt = att.get("prompt")
+    return prompt if isinstance(prompt, str) and prompt.strip() else None
+
+
 def shorten(text, cap):
     if len(text) <= cap:
         return text
@@ -104,6 +137,7 @@ def main():
     first_ts = last_ts = None
     counts = {"assistant": 0}
     commands = []
+    queued = []
 
     try:
         with open(args.transcript, encoding="utf-8", errors="replace") as f:
@@ -122,6 +156,11 @@ def main():
                 if ltype == "assistant":
                     counts["assistant"] += 1
                     continue
+                if ltype == "attachment":
+                    qp = queued_human_prompt(obj)
+                    if qp:
+                        queued.append((ts, qp))
+                    continue
                 if ltype != "user" or obj.get("isSidechain") or obj.get("isMeta") or obj.get("isCompactSummary"):
                     continue
                 for key in meta:
@@ -137,6 +176,25 @@ def main():
     except OSError as e:
         print(f"distill: cannot read transcript: {e}", file=sys.stderr)
         return 2
+
+    # Merge in the mid-turn messages (see queued_human_prompt). A queued message
+    # that was NOT absorbed is also delivered as an ordinary user row, so the same
+    # text would land twice; suppress any queued copy whose text already appears as
+    # a real turn. Absorbed ones match nothing and are the whole point of this.
+    if queued:
+        seen = {t[2].strip() for t in turns}
+        for ts, prompt in queued:
+            parsed = parse_user_turn({"message": {"content": prompt}})
+            if not parsed:
+                continue
+            kind, text = parsed
+            if text.strip() in seen:
+                continue
+            seen.add(text.strip())
+            if kind == "command":
+                commands.append(text.split(" — ")[0].replace("invoked ", ""))
+            turns.append((ts, kind, text))
+        turns.sort(key=lambda t: t[0])
 
     typed = [t for t in turns if t[1] == "typed"]
 
