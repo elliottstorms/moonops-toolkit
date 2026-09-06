@@ -61,6 +61,14 @@ literal hex — hand-sync them if `--purple-bright` ever changes (a one-shared-C
    turns into stimulation content ("Dog TV" motion is a non-goal).
 5. the design lead's veto is real: a render that fails the "calm, beautiful, 2am viewer" bar doesn't ship,
    regardless of schedule.
+6. **Thumbnail text, binding numbers (the design lead's ruling 2026-09-06, supersedes the single-line
+   7 percent / 6-word gate):** at 1280x720, the headline is Poppins Bold cream, 1 to 3 uppercase
+   words, 132 px shrinking to a 96 px floor (shorten copy, never shrink past it); the subline is
+   optional, one line, at most 5 words, Poppins Medium steel, 32 to 45 px, never more than half
+   the rendered headline size, dropped before the headline shrinks. Word caps count per line, not
+   per tile; the badge (Poppins Medium 40) and the MOONOPS wordmark (Poppins Medium 34) are chrome,
+   not copy, and are not counted or measured against the headline floor. Record:
+   `moonops-rain/council/RULING_2026-09-06_aria-thumbnail-text-gates.md`.
 
 ## Names and referents (procedural audio)
 
