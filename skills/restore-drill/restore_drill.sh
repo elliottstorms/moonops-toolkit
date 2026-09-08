@@ -70,6 +70,28 @@ classify_out() {
   done
 }
 
+# Content the mirror could actually carry: every file except the runtime noise
+# that backup.sh's rsync excludes (backup.sh:55) and this drill's own diff
+# filter both drop already. Prints the first such file, or nothing.
+#
+# Why this is not just `ls -A` (2026-09-08): scheduled-tasks/bnc-demand-counter
+# is a retired task whose only remaining files are launchd.err.log and
+# launchd.out.log. rsync drops both, so the directory reaches the mirror empty,
+# and git cannot track an empty directory. The old literal-emptiness test saw
+# two files, called the folder restorable, and reported REAL DRIFT on a mirror
+# that was missing nothing. Verified before changing anything: the path has
+# never existed in the mirror's history, so nothing was ever lost.
+#
+# That mattered because it would have fired on EVERY run from then on, and a
+# drill that is permanently red is a drill nobody reads. Deliberately narrow:
+# a directory holding any file that is not on this noise list still reports
+# drift, which is the case tests/ below actually exercises.
+_restorable_content() {
+  find "$1" -type f \
+    ! -name '.DS_Store' ! -name '*.pyc' ! -name '*.log' ! -name '*.tmp' \
+    ! -name '.backup-needed' ! -path '*/__pycache__/*' 2>/dev/null | head -1
+}
+
 # git cannot represent empty directories, so a live empty dir is never in the
 # mirror clone, so "Only in" lines pointing at empty dirs are not restorable
 # content and get dropped here.
@@ -79,7 +101,7 @@ filter_empty_dirs() {
       "Only in "*)
         d="${line#Only in }"
         dir="${d%%:*}"; name="${d#*: }"
-        if [ -d "$dir/$name" ] && [ -z "$(ls -A "$dir/$name" 2>/dev/null)" ]; then
+        if [ -d "$dir/$name" ] && [ -z "$(_restorable_content "$dir/$name")" ]; then
           continue
         fi
         ;;
