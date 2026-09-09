@@ -9,6 +9,8 @@
 #    2) macOS `say` with an installed Premium/Enhanced voice   (offline)
 #    3) macOS `say` Samantha        (offline, explicit last resort)
 #    4) piper                       (offline neural, needs a local .onnx)
+#   Opt-in ahead of all of these: ElevenLabs, by "-v el:<voice_id>" or a one-line
+#   default-voice file (see the ElevenLabs block below); it needs ELEVENLABS_API_KEY.
 #
 #  Default output: mp3, loudness-normalized, with an ID3 title, in ~/Claude/Audio.
 #
@@ -36,6 +38,19 @@ MAX_CHUNK="${AUDIOCAST_CHUNK_CHARS:-1400}"
 GAP_SECONDS="0.35"
 ENGINE=""
 OFFLINE=0
+# ElevenLabs engine (opt-in by voice id, key from the environment, never embedded):
+#   -v el:<voice_id>          render with that ElevenLabs voice (ELEVENLABS_API_KEY must be set)
+#   ELEVENLABS_MODEL           default eleven_v3
+#   ELEVENLABS_CHUNK_CHARS     default 2400 (per request, on paragraph/sentence boundaries)
+# A standing default voice lives in a plain one-line file (portable, no harness involved):
+#   AUDIOCAST_DEFAULT_VOICE_FILE  default ~/.config/audiocast/default-voice, e.g. "el:<voice_id>"
+#   If that voice cannot render, the chain falls through to edge-tts Ava as before.
+EL_VOICE_ID=""
+EL_MODEL="${ELEVENLABS_MODEL:-eleven_v3}"
+EL_CHUNK="${ELEVENLABS_CHUNK_CHARS:-2400}"
+EL_SPEED=""
+DEFAULT_VOICE_FILE="${AUDIOCAST_DEFAULT_VOICE_FILE:-$HOME/.config/audiocast/default-voice}"
+VOICE_FROM_FILE=0
 
 while [ $# -gt 0 ]; do
   case "$1" in
@@ -51,6 +66,11 @@ while [ $# -gt 0 ]; do
     *) if [ -z "$INPUT" ]; then INPUT="$1"; shift; else echo "unknown arg: $1" >&2; exit 2; fi;;
   esac
 done
+
+if [ -z "$VOICE" ] && [ -s "$DEFAULT_VOICE_FILE" ]; then
+  VOICE="$(head -n1 "$DEFAULT_VOICE_FILE" | tr -d '[:space:]')"
+  [ -n "$VOICE" ] && VOICE_FROM_FILE=1
+fi
 
 [ -z "$INPUT" ] && { echo "error: -i script.txt required" >&2; exit 2; }
 [ -f "$INPUT" ] || { echo "error: input not found: $INPUT" >&2; exit 2; }
@@ -100,16 +120,26 @@ is_edge_voice() {
   esac
 }
 
+is_eleven_voice() {
+  case "$1" in el:*|elevenlabs:*) return 0;; *) return 1;; esac
+}
+
 WANT_ENGINE="auto"
 if [ -n "$VOICE" ]; then
-  if is_edge_voice "$VOICE"; then
+  if is_eleven_voice "$VOICE"; then
+    WANT_ENGINE="eleven"; EL_VOICE_ID="${VOICE#*:}"
+  elif is_edge_voice "$VOICE"; then
     WANT_ENGINE="edge"; EDGE_VOICE="$VOICE"
   else
     WANT_ENGINE="say"
   fi
 fi
 if [ "$OFFLINE" -eq 1 ]; then
-  if [ "$WANT_ENGINE" = "edge" ]; then
+  if [ "$WANT_ENGINE" = "eleven" ] && [ "$VOICE_FROM_FILE" -eq 1 ]; then
+    # The default-file voice is a preference, not an order: --offline wins.
+    WANT_ENGINE="auto"; VOICE=""; EL_VOICE_ID=""
+  fi
+  if [ "$WANT_ENGINE" = "edge" ] || [ "$WANT_ENGINE" = "eleven" ]; then
     echo "error: --offline and the neural voice '$VOICE' contradict each other." >&2
     echo "       Drop one: --offline keeps the text on this machine, the neural voice does not." >&2
     exit 2
@@ -121,6 +151,9 @@ fi
 # a bare wpm number against the ~175 wpm baseline `say` reads at.
 EDGE_RATE=""
 if [ -n "$RATE" ]; then
+  case "$RATE" in
+    [0-9]*) EL_SPEED="$(awk -v r="$RATE" 'BEGIN{s=r/175; if(s<0.7)s=0.7; if(s>1.2)s=1.2; printf "%.2f", s}')";;
+  esac
   case "$RATE" in
     [+-][0-9]*%) EDGE_RATE="$RATE";;
     [0-9]*)      EDGE_RATE="$(awk -v r="$RATE" 'BEGIN{p=int((r-175)*100/175+(r>=175?0.5:-0.5)); printf "%s%d%%", (p<0?"":"+"), p}')";;
@@ -283,6 +316,87 @@ try_edge() {
   report "$OUT"; return 0
 }
 
+# ── 1b) ElevenLabs (neural, opt-in by voice id; key from the environment) ─
+el_render_chunk() {
+  local src="$1" dst="$2" attempt=1
+  while [ "$attempt" -le 3 ]; do
+    python3 - "$src" "$dst" "$EL_VOICE_ID" "$EL_MODEL" "$EL_SPEED" <<'PY' 2>>"$WORKDIR/el_err.log" || true
+import sys, os, json, urllib.request, urllib.error
+src, dst, vid, model, speed = sys.argv[1:6]
+text = open(src, encoding="utf-8").read().strip()
+key = os.environ.get("ELEVENLABS_API_KEY", "")
+if not key or not text:
+    sys.stderr.write("no key or no text\n"); sys.exit(1)
+settings = {"stability": 0.5, "similarity_boost": 0.75}
+if speed:
+    settings["speed"] = float(speed)
+body = {"text": text, "model_id": model, "voice_settings": settings}
+req = urllib.request.Request(
+    "https://api.elevenlabs.io/v1/text-to-speech/%s?output_format=mp3_44100_128" % vid,
+    data=json.dumps(body).encode("utf-8"), method="POST",
+    headers={"xi-api-key": key, "Content-Type": "application/json", "Accept": "audio/mpeg"})
+try:
+    with urllib.request.urlopen(req, timeout=300) as r:
+        data = r.read()
+except urllib.error.HTTPError as e:
+    sys.stderr.write("HTTP %s %s\n" % (e.code, e.read()[:300])); sys.exit(1)
+if len(data) < 1000:
+    sys.stderr.write("short body\n"); sys.exit(1)
+open(dst, "wb").write(data)
+PY
+    if [ -s "$dst" ]; then return 0; fi
+    rm -f "$dst"
+    attempt=$((attempt + 1))
+    if [ "$attempt" -le 3 ]; then sleep "$attempt"; fi
+  done
+  return 1
+}
+
+try_eleven() {
+  [ -n "$EL_VOICE_ID" ] || return 1
+  if [ -z "${ELEVENLABS_API_KEY:-}" ]; then
+    echo "[elevenlabs] ELEVENLABS_API_KEY is not set in the environment, skipping." >&2; return 1
+  fi
+  command -v ffmpeg >/dev/null 2>&1 || { echo "[elevenlabs] ffmpeg required, skipping." >&2; return 1; }
+
+  local nchunks
+  nchunks="$(edge_chunk_script | python3 - "$INPUT" "$WORKDIR" "$EL_CHUNK" 2>/dev/null || echo "")"
+  case "${nchunks:-}" in ''|*[!0-9]*) echo "[elevenlabs] could not chunk input, skipping." >&2; return 1;; esac
+  [ "$nchunks" -ge 1 ] || return 1
+
+  echo "[elevenlabs] rendering with voice el:$EL_VOICE_ID, model $EL_MODEL (${nchunks} chunk$([ "$nchunks" -eq 1 ] || echo s))"
+  local i n part
+  i=0
+  for part in "$WORKDIR"/chunk_*.txt; do
+    i=$((i + 1))
+    n="$(printf '%04d' "$i")"
+    if ! el_render_chunk "$part" "$WORKDIR/part_$n.mp3"; then
+      echo "[elevenlabs] chunk $i of $nchunks failed after 3 attempts: $(tail -n1 "$WORKDIR/el_err.log" 2>/dev/null)" >&2
+      rm -f "$WORKDIR"/part_*.mp3 "$WORKDIR"/chunk_*.txt
+      return 1
+    fi
+    if [ "$nchunks" -gt 1 ]; then echo "   chunk $i/$nchunks ok"; fi
+  done
+
+  local gap=""
+  if [ "$nchunks" -gt 1 ]; then
+    gap="$WORKDIR/gap.mp3"
+    ffmpeg -y -loglevel error -f lavfi -i anullsrc=r=44100:cl=mono \
+      -t "$GAP_SECONDS" -codec:a libmp3lame -b:a 128k "$gap"
+  fi
+  local list="$WORKDIR/concat.txt"
+  : > "$list"
+  i=0
+  for part in "$WORKDIR"/part_*.mp3; do
+    i=$((i + 1))
+    if [ "$i" -gt 1 ] && [ -n "$gap" ]; then printf "file '%s'\n" "$gap" >> "$list"; fi
+    printf "file '%s'\n" "$part" >> "$list"
+  done
+  finalize "$list" 1
+  VOICE="el:$EL_VOICE_ID"; FMT="${OUT##*.}"; ENGINE="elevenlabs ($EL_MODEL)"
+  report "$OUT"; return 0
+}
+
 # ── 2/3) macOS say: Premium/Enhanced first, Samantha last ────
 pick_voice() {
   [ -n "$VOICE" ] && { echo "$VOICE"; return; }
@@ -354,6 +468,19 @@ try_piper() {
 
 # ── engine chain ─────────────────────────────────────────────
 case "$WANT_ENGINE" in
+  eleven)
+    try_eleven && exit 0
+    if [ "$VOICE_FROM_FILE" -eq 1 ]; then
+      echo "[elevenlabs] default voice could not render, falling through to the standard chain (edge-tts Ava first)." >&2
+      VOICE=""; EL_VOICE_ID=""
+      try_edge && exit 0
+      try_say && exit 0
+      try_piper && exit 0
+    else
+      echo "error: -v '$VOICE' requested but ElevenLabs could not render it (see messages above)." >&2
+      exit 1
+    fi
+    ;;
   edge)
     try_edge && exit 0
     echo "error: -v '$VOICE' is a neural voice but edge-tts could not render it." >&2
