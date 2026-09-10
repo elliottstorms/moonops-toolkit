@@ -324,7 +324,7 @@ el_render_chunk() {
 import sys, os, json, urllib.request, urllib.error
 src, dst, vid, model, speed = sys.argv[1:6]
 text = open(src, encoding="utf-8").read().strip()
-key = os.environ.get("ELEVENLABS_API_KEY", "")
+key = os.environ.get("ELEVENLABS_API_KEY", "").strip().strip('"').strip("'")
 if not key or not text:
     sys.stderr.write("no key or no text\n"); sys.exit(1)
 settings = {"stability": 0.5, "similarity_boost": 0.75}
