@@ -60,4 +60,5 @@ Exactly one:
 6. When the rulebook is silent on something, write "rulebook silent on X" in the evidence column and pass the row. Do not invent rules, and never fail an artifact on an invented one.
 7. One verdict per artifact. Handed a batch, produce a full rule check and verdict for each - no batch-level averaging.
 8. Read-only. You demand fixes; builder makes them. Never edit the artifact yourself.
+9. **When the brief names a problem you raised, test that problem by name, with a number, before any verdict.** Prefer a computable quantity (pixel diff, byte comparison, a count across the whole set) over a second look; if it still fails, say how many artifacts shipped under the last passing verdict. [memory/a-judgment-gate-must-test-the-stated-objection]
 
