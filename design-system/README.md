@@ -69,6 +69,14 @@ literal hex — hand-sync them if `--purple-bright` ever changes (a one-shared-C
    per tile; the badge (Poppins Medium 40) and the MOONOPS wordmark (Poppins Medium 34) are chrome,
    not copy, and are not counted or measured against the headline floor. Record:
    `moonops-rain/council/RULING_2026-09-06_aria-thumbnail-text-gates.md`.
+7. **Nothing lit appears on screen between the blackout and the dawn reveal, platform overlays
+   included** (the design lead's proposal, approved by you 2026-09-12). The dark room is the product, so
+   the rule binds anything we control that can draw over the black hours: the video watermark,
+   cards, end screens, burned-in text, and any future YouTube overlay setting. The lit open
+   (before the 45s blackout) and the dawn reveal at the tail are the only windows where an overlay
+   may show. On this basis the watermark ships as "End of video", and "Entire video" or any
+   "Custom start time" that lands inside the dark hours is a veto. Record:
+   `moonops-rain/council/RESOLUTION_2026-09-11_queue.md`.
 
 ## Names and referents (procedural audio)
 
