@@ -35,7 +35,22 @@ if [ -z "$SID" ] || [ ! -f "$TP" ]; then
   exit 0
 fi
 if [ -f "$ROOT/done/$SID.md" ]; then
-  echo "$(ts) skip: already healed $SID" >> "$LOG"
+  # Already healed, but she may have resumed it and kept typing (proposal 79).
+  # Queue ONLY what no loop file holds yet, under a name that can never
+  # overwrite the original digest. Nothing new means the old skip, as before.
+  FU="$HOME/.claude/skills/self-heal/followup.py"
+  NAME=$(python3 "$FU" --session "$TP" --next-name 2>/dev/null)
+  FTMP=$(mktemp "${TMPDIR:-/tmp}/selfheal-fu.XXXXXX")
+  python3 "$FU" --session "$TP" > "$FTMP" 2>/dev/null
+  FRC=$?
+  if [ $FRC -eq 0 ] && [ -s "$FTMP" ] && [ -n "$NAME" ]; then
+    mv "$FTMP" "$ROOT/queue/$NAME"
+    echo "$(ts) queued follow-up $NAME (reason=$REASON, resumed after its digest was healed)" >> "$LOG"
+  else
+    rm -f "$FTMP"
+    [ $FRC -eq 0 ] || [ $FRC -eq 3 ] || echo "$(ts) ERROR: followup rc=$FRC for $SID ($TP)" >> "$LOG"
+    echo "$(ts) skip: already healed $SID (nothing typed since)" >> "$LOG"
+  fi
   exit 0
 fi
 

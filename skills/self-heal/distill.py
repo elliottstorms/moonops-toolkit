@@ -50,8 +50,9 @@ def queued_human_prompt(obj):
     including "DO NOT MAKE THAT MISTAKE EVER AGAIN." and "not good to have 400
     miles quantified". That is a selection bias pointed at exactly the wrong
     target, because a message she types while Claude is mid-flight is
-    overwhelmingly a correction, which section 3 calls the strongest signal there
-    is. It cost this loop a live mistake: the 2026-09-02 digest carried her "once
+    often a correction, which section 3 calls the strongest signal there is.
+    (Corrected 2026-09-14, proposal 79: "overwhelmingly" overstated it; /insights
+    counted about 6 corrections in 29 such messages, 2026-09-01 to 09-14.) It cost this loop a live mistake: the 2026-09-02 digest carried her "once
     a week or something" and not the "lets go with once a day" that superseded it
     ten minutes later, so the 09-03 pass nearly filed a proposal arguing her own
     settled decision back at her, citing her own words.

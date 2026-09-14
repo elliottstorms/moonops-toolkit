@@ -5,7 +5,10 @@
   "skillOverrides": {
     "moonops-video": "off",
     "stella-cast": "off",
-    "writeup": "off"
+    "writeup": "off",
+    "close-out": "off",
+    "gumroad-sales": "off",
+    "tiktok-bookmarks": "off"
   },
   "hooks": {
     "PreToolUse": [
