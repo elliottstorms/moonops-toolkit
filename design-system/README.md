@@ -55,8 +55,20 @@ literal hex — hand-sync them if `--purple-bright` ever changes (a one-shared-C
 2. **Titles:** ≤100 chars hard cap (YouTube rejects over), duration-prefixed when accurate
    ("12 Hours…"), no em dashes anywhere in public copy, no claims we can't guarantee
    (e.g. "No Ads").
-3. **Thumbnails:** MoonOps system only — night palette, crescent moon, silhouette subjects.
-   No stock faces, no yellow arrows, no red circles.
+3. **Thumbnails:** MoonOps system only: night palette, crescent moon, and a quiet scene cue in
+   the sky (stars, rain, waves and the like). No stock faces, no yellow arrows, no red circles.
+   **No additional images unless you asks for them (Owner rule, 2026-09-19, her words: "stop
+   adding additional images to thumbnails unless I ask for them").** A drawn object or silhouette
+   subject (a bed, a fan, a chair, a cottage) goes on a tile only when she has asked for that
+   image, in her own words, for that tile. A design gate asking for a "distinct focal subject" is
+   not her asking, and it is no longer an available fix: she has pulled a drawn object off a tile
+   twice (the ceiling fan on 2026-09-11, the bed on 2026-09-19). The grid is still the unit of
+   review and a recolour still fails, but the remedy is a different tint, a different or new sky
+   cue, or different copy, never an object. Tiles she approved with a subject before this rule
+   (ridge, bluff, tor) stand as approved. Enforced in `moonops-rain/make_thumb_v2.py`, which
+   refuses `--focal` without `--owner-asked`. Record:
+   `moonops-rain/council/RULING_2026-09-19_no-added-images-on-thumbnails.md`. Original wording of
+   this rule: `archive/README-channel-rule-3-pre-2026-09-19.md`.
 4. **The caretaker line** (kid-friendly nightlight, pet-friendly) extends the brand; it never
    turns into stimulation content ("Dog TV" motion is a non-goal).
 5. the design lead's veto is real: a render that fails the "calm, beautiful, 2am viewer" bar doesn't ship,
