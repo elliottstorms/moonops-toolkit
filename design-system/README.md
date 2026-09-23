@@ -25,12 +25,15 @@ quieter option wins. the design lead (CCO) holds the veto on channel work; on we
 | `--grad-mid` / `--grad-deep` | `#131d3a` / `#1a1c44` | The body gradient's mid and deepest stops (with `--ink` at the ends). |
 
 **Type** — Poppins for display and body; JetBrains Mono for eyebrows, labels, and data;
-Georgia only for pull quotes. The `// eyebrow` mono label is the signature cue — every major
-section gets one.
+Georgia only for pull quotes. The `// eyebrow` mono label is the signature cue, and it earns its place: it sits above a
+heading only when it adds something the heading lacks (a live state, a dated fact, a place in a
+sequence, or your aside). A label that only repeats the section's name does not get one
+(Owner ruling 2026-09-23: moonops.org kept 12 labels and retired 21).
 
 **Shape & motion** — 16px radius on cards and buttons (legacy 11–18px variants converge to 16
-opportunistically, never as a repaint), pill radius on chips; one hover motion
-(`translateY(-2px)`, .15s ease) everywhere, with .2s reserved for image zooms; one shadow.
+opportunistically, never as a repaint), pill radius on chips; hover motion is for clickable things and sits inside
+`@media (hover: hover)`: the `translateY(-2px)` .15s ease lift is the default, image zooms keep .2s,
+and other hover motions are allowed where they suit the element (you, 2026-09-23); one shadow.
 Nothing bounces, nothing spins.
 
 **Named exceptions (Council resolution 2026-07-11, 5-0)** — the index turntable set-piece is the
@@ -38,6 +41,17 @@ one sanctioned spin (it's a record; records spin) and must stay inside `prefers-
 citing it to justify a second spin anywhere is a veto. SVG internals (the moonmark gradient stops on all
 five pages, the turntable record-label gradient stops on index, `favicon.svg`) intentionally carry
 literal hex — hand-sync them if `--purple-bright` ever changes (a one-shared-CSS-rule fix is pre-approved for after 2026-07-15).
+
+**Named exception (Owner ruling 2026-09-23, overruling the design lead's veto; her dissent is on record)**: the
+label shimmer. The 12 kept `//` labels on moonops.org (index, lab, case-study-listening, offerings)
+and the home page's four other `//` lines (the method diagram's title and caption, "where I learned
+it:" and "counted", Owner pick 2026-09-23) carry a light band across their words, never the `//`, each
+line on its own color, every 8 seconds (the sweep takes the first 30% of the
+cycle, then the label rests). It runs only with JavaScript on and `prefers-reduced-motion:
+no-preference`, rests while the label is offscreen, and the footer's "pause motion" control stops
+it on every page and remembers the choice (WCAG 2.2.2: anything that moves on its own for more than
+5 seconds needs a pause). It is for those labels only: citing it to put a shimmer on a heading,
+button, body text or anything else is a veto.
 
 **Hard rules**
 1. Dark surfaces only. No light-mode variant exists.
@@ -180,8 +194,9 @@ old one. Archive the prior name, tags and checksums before touching anything.
 
 1. Copy `tokens.css` (or its `:root` block) in verbatim.
 2. Steal components from `components.html` — they're dependency-free.
-3. Run the result past the checklist: dark base ✓ eyebrows ✓ one accent hierarchy ✓
-   single hover motion ✓ moon mark once ✓.
+3. Run the result past the checklist: dark base ✓ eyebrows only where they add information ✓
+   one accent hierarchy ✓ hover motion inside `@media (hover: hover)` ✓ a pause control for
+   anything that moves on its own past 5 seconds ✓ moon mark once ✓.
 4. For any AI model building UI: paste this README + tokens.css into context and instruct
    "use only these tokens and components; do not invent new colors or motions."
 
