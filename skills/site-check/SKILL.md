@@ -16,6 +16,10 @@ python3 ~/.claude/skills/site-check/site_audit.py --repo ~/Claude/Projects/moono
 ```
 
 - `--live` also verifies the deployed site is byte-identical to local (post-deploy check).
+  Its requests to the site itself identify as a monitor (`SELF_UA`), so the moonops.org
+  visitor counter files them as bot traffic; external link checks keep the browser-like
+  `UA`. Before 2026-09-23 each live run added one human view per page; the affected days
+  are in `~/Claude/Projects/moonops/site-analytics/AUDIT_LOADS.md`.
 - `--live --wait 180` polls after a push until Netlify finishes. **The command prints
   nothing while polling: run it with a Bash timeout of at least 240000ms or in the
   background; silence is normal, do not kill and retry.**

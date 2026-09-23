@@ -26,9 +26,18 @@ import sys
 import time
 import urllib.request
 import urllib.error
+import urllib.parse
 from html.parser import HTMLParser
 
+# Two user agents (2026-09-23). External link checks keep the browser-like UA, so
+# sites that screen bots (LinkedIn) do not block them any harder. Every request to
+# the audited site itself carries SELF_UA: the moonops.org visitor counter
+# (netlify/edge-functions/pagecount.ts) files a UA containing "monitor" as bot.
+# Until 2026-09-23 the site got UA too, which the counter files as human, so each
+# --live run added one human view per page (8 per run, measured that day). Guarded
+# in the moonops repo by tools/pagecount_test.mjs and tools/test_site_audit_ua.py.
 UA = "Mozilla/5.0 (Macintosh) site-audit/1.1 (+https://www.moonops.org)"
+SELF_UA = "Mozilla/5.0 (compatible; site-audit-monitor/1.1; +https://www.moonops.org)"
 FAIL, WARN, OK = "FAIL", "WARN", "OK"
 
 
@@ -114,11 +123,11 @@ def parse_page(path):
     return p
 
 
-def http_status(url, timeout):
+def http_status(url, timeout, ua):
     """Return (status_code_or_None, note). Tries HEAD then GET."""
     for method in ("HEAD", "GET"):
         try:
-            req = urllib.request.Request(url, method=method, headers={"User-Agent": UA})
+            req = urllib.request.Request(url, method=method, headers={"User-Agent": ua})
             with urllib.request.urlopen(req, timeout=timeout) as r:
                 return r.status, ""
         except urllib.error.HTTPError as e:
@@ -130,10 +139,25 @@ def http_status(url, timeout):
     return None, "unreachable"
 
 
-def fetch_bytes(url, timeout):
-    req = urllib.request.Request(url, headers={"User-Agent": UA, "Cache-Control": "no-cache"})
+def fetch_bytes(url, timeout, ua):
+    req = urllib.request.Request(url, headers={"User-Agent": ua, "Cache-Control": "no-cache"})
     with urllib.request.urlopen(req, timeout=timeout) as r:
         return r.read()
+
+
+def ua_for(url, base_url):
+    """SELF_UA for a request to the audited site itself (its host, www., or any
+    subdomain), UA for everything else. Exact or dot-bounded match, so a lookalike
+    such as evilmoonops.org stays external."""
+    def host(u):
+        return urllib.parse.urlsplit(u if "//" in u else "//" + u).hostname or ""
+    site = host(base_url) if base_url else ""
+    if site.startswith("www."):
+        site = site[4:]
+    h = host(url)
+    if site and (h == site or h.endswith("." + site)):
+        return SELF_UA
+    return UA
 
 
 def is_internal(href, base_url):
@@ -325,7 +349,7 @@ def run_audit(repo, cfg, live, wait, as_json, offline=False):
 
     checked, skipped = {}, []
     def check_one(url):
-        return url, http_status(url, timeout)
+        return url, http_status(url, timeout, ua_for(url, base_url))
     to_check = []
     for url in sorted(externals):
         u = url if not url.startswith("//") else "https:" + url
@@ -448,7 +472,7 @@ def run_audit(repo, cfg, live, wait, as_json, offline=False):
                         continue
                     url = base_url + "/" + ("" if p == "index.html" else p)
                     try:
-                        remote = fetch_bytes(url, timeout)
+                        remote = fetch_bytes(url, timeout, SELF_UA)
                     except Exception as e:  # noqa: BLE001
                         mismatched.append((p, "fetch failed: %s" % str(e)[:100]))
                         continue
