@@ -48,9 +48,9 @@ The verdict is the last `RESTORE DRILL:` line (exit code in brackets):
   **the failing case.** The lines under it split N by cause:
   - files that predate the backup and are missing from it or still differ:
     check `backup.sh`'s include list and its rsync excludes;
-  - files the backup copies but git never commits, because a project's own
-    `.gitignore` applies inside the mirror (grouped by rule, so one rule
-    covering thousands of files is one line);
+  - files the backup copies but git never commits because an ignore rule
+    applies inside the mirror, OUTSIDE `projects/` (grouped by rule). Inside
+    `projects/` they are not drift: see ruling A below;
   - copies ON GITHUB that hold a term the privacy or embedded-media filter
     should have kept off them: a privacy incident, handled before anything else.
 - `RESTORE DRILL: INCOMPLETE` (2): every checked file restores, but some files
@@ -59,7 +59,16 @@ The verdict is the last `RESTORE DRILL:` line (exit code in brackets):
 - `RESTORE DRILL: CANNOT RUN` (2): the drill could not read its copy rules out
   of `backup.sh`. Nothing was compared. Update the drill to match `backup.sh`.
 
-A privacy or embedded-media holdback is the guard working, not a gap. The last
+A privacy or embedded-media holdback is the guard working, not a gap.
+**Ruling A (you, 2026-09-25):** a file inside a `projects/` scope that git
+ignores (the project's own `.gitignore`, or her global one) is kept out of the
+cloud copy on purpose. The drill counts it on the "Kept out of the cloud copy on
+purpose" line and in that scope's `match:` line, and it never turns the verdict
+red. It rests on two facts: those files are regenerable or local-only, and the
+Seagate Time Machine layer holds them. Outside `projects/` nothing has been
+ruled on, so an ignored file there is still `[REAL: never reaches GitHub]`.
+Mutation-tested 2026-09-25: honoring ignores everywhere makes the boundary test
+pass wrongly, and the shipped code fails it as it should. The last
 lines of every run count the holdbacks and the files over the size cap: those
 come back only from a local backup such as Time Machine, never from the mirror.
 
@@ -78,8 +87,9 @@ file's change time (ctime), not its modification time, because `cp -p`,
   is stale for this file.
 - `[REAL: last touched ... and NOT IN THE MIRROR AT ALL]`: the file exists on
   the machine, predates the backup, and was never copied.
-- `[REAL: never reaches GitHub]`: the `.gitignore` rule that keeps git from
-  committing files the backup copies, with a count and one example.
+- `[REAL: never reaches GitHub]`: outside `projects/` only, the ignore rule
+  that keeps git from committing files the backup copies, with a count and
+  one example.
 - `[REAL: this copy ON GITHUB holds a term ...]`: a filter failed at some point.
 
 Clone failure: check `gh auth status` and network before anything else.

@@ -381,7 +381,7 @@ done < "$T/.cpfiles"
 R() { _bk_R -n -i "$@"; }
 STAGE="$T/inv"; mkdir -p "$STAGE"
 : > "$T/.empty"
-TOT_PII=0; TOT_EMB=0; TOT_OVER=0; TOT_CMP=0
+TOT_PII=0; TOT_EMB=0; TOT_OVER=0; TOT_CMP=0; TOT_IGN=0
 
 cap() {  # print at most 15 detail lines per scope, then a count of the rest
   awk 'NR <= 15 { print } END { if (NR > 15) printf "    ... and %d more like these\n", NR - 15 }'
@@ -474,6 +474,15 @@ rules_scope() {
   fi
   awk -F '\t' -v n="$((${#rs_sub} + 2))" '{ print substr($2, n) }' "$T/.ign" | LC_ALL=C sort -u > "$T/.ign.paths"
   LC_ALL=C comm -23 "$T/.liveonly" "$T/.ign.paths" > "$T/.liveonly.plain"
+  # Ruling A (you, 2026-09-25): inside a project scope, a file git ignores is kept
+  # out of the cloud copy ON PURPOSE, like a privacy holdback. The project's own repo
+  # skips it too, and the local Time Machine layer holds it. Outside projects/ an
+  # ignored file is still REAL: nothing there has been ruled on.
+  case "$rs_sub" in
+    projects/*) cp "$T/.ign" "$T/.ign.honored"; : > "$T/.ign.real" ;;
+    *) : > "$T/.ign.honored"; cp "$T/.ign" "$T/.ign.real" ;;
+  esac
+  n_ign=$(wc -l < "$T/.ign.honored" | tr -d ' '); TOT_IGN=$((TOT_IGN + n_ign))
   # privacy check on the cloud copy itself
   : > "$T/.leak"
   if [ -n "$rs_re" ] && [ -s "$T/.clone" ]; then
@@ -493,7 +502,8 @@ rules_scope() {
   if [ "$n_pii" -gt 0 ]; then info="$info; $n_pii held back by the privacy filter"; fi
   if [ "$n_emb" -gt 0 ]; then info="$info; $n_emb embedded-media page(s) held back"; fi
   if [ "$n_over" -gt 0 ]; then info="$info; $n_over over the size cap"; fi
-  if [ -s "$T/.ign" ] || [ -s "$T/.liveonly.plain" ] || [ -s "$T/.differs" ] \
+  if [ "$n_ign" -gt 0 ]; then info="$info; $n_ign skipped by the project's own ignore list"; fi
+  if [ -s "$T/.ign.real" ] || [ -s "$T/.liveonly.plain" ] || [ -s "$T/.differs" ] \
      || [ -s "$T/.mirroronly" ] || [ -s "$T/.leak" ]; then
     echo "drift: $rs_live <-> mirror/$rs_sub ($info)"
   else
@@ -505,15 +515,15 @@ rules_scope() {
     printf '    [REAL: this copy ON GITHUB holds a term the privacy or embedded-media filter keeps off it] %s\n' "$rs_sub/$f"
     echo "RP" >> "$T/.tally"
   done < "$T/.leak" | cap
-  if [ -s "$T/.ign" ]; then
+  if [ -s "$T/.ign.real" ]; then
     awk -F '\t' -v n="$((${#rs_sub} + 2))" '
       { r = $1; i = index(r, ":"); src = substr(r, 1, i - 1); rest = substr(r, i + 1)
         j = index(rest, ":"); pat = substr(rest, j + 1); k = src "\t" pat; c[k]++
         if (!(k in ex)) ex[k] = substr($2, n) }
       END { for (k in c) { split(k, a, "\t")
         printf "    [REAL: never reaches GitHub] %d file(s) the backup copies but git never commits, because %s ignores \"%s\" (e.g. %s)\n", c[k], a[1], a[2], ex[k] } }
-    ' "$T/.ign" | LC_ALL=C sort
-    sed 's/.*/RI/' "$T/.ign" >> "$T/.tally"
+    ' "$T/.ign.real" | LC_ALL=C sort
+    sed 's/.*/RI/' "$T/.ign.real" >> "$T/.tally"
   fi
   { awk -v L="$rs_live" '{ n = split($0, p, "/"); nm = p[n]
         d = (n > 1) ? substr($0, 1, length($0) - length(nm) - 1) : ""
@@ -627,7 +637,7 @@ fi
 if [ "$TOT_CMP" -gt 0 ]; then
   echo "  Rule-checked scopes: $TOT_CMP file(s) compared against backup.sh's own copy rules."
 fi
-if [ $((TOT_PII + TOT_EMB + TOT_OVER)) -gt 0 ]; then
-  echo "  Kept out of the cloud copy on purpose: $TOT_PII file(s) held back by the privacy filter, $TOT_EMB embedded-media page(s), $TOT_OVER file(s) over the size cap. Those come back only from a local backup such as Time Machine, never from this mirror."
+if [ $((TOT_PII + TOT_EMB + TOT_OVER + TOT_IGN)) -gt 0 ]; then
+  echo "  Kept out of the cloud copy on purpose: $TOT_PII file(s) held back by the privacy filter, $TOT_EMB embedded-media page(s), $TOT_OVER file(s) over the size cap, $TOT_IGN file(s) skipped by a project's own ignore list (ruling A, 2026-09-25). Those come back only from a local backup such as Time Machine, never from this mirror."
 fi
 exit $RC
