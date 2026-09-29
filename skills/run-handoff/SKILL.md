@@ -79,7 +79,7 @@ cat >> "$F" <<'EOF'
 - Shipped: <what was produced>
 - Where: <URL / commit hash / absolute path>
 - Verified: <what a check actually confirmed> · Not verified: <what remains assumed, or "none">
-- Notes for owner: <objections to a locked decision, deviations, follow-ups — or "none">
+- Notes for owner: <objections to a locked decision, deviations, follow-ups, or "none">
 EOF
 ```
 

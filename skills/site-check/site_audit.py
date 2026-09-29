@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""site_audit.py — deterministic pre/post-deploy audit for static HTML sites.
+"""site_audit.py: deterministic pre/post-deploy audit for static HTML sites.
 
 Designed to be run by a human or any AI model: all intelligence lives here,
 the caller just reads the report. Stdlib only, Python 3.9+.
@@ -223,7 +223,7 @@ def load_config(repo):
     """Return (cfg, error_message). Validates the contract's required shape."""
     cfg_path = os.path.join(repo, ".site-check.json")
     if not os.path.isfile(cfg_path):
-        return None, ("No config at %s — this file is the audit contract. If it should "
+        return None, ("No config at %s; this file is the audit contract. If it should "
                       "exist, restore it (e.g. from git); only run --init for a brand-new site." % cfg_path)
     try:
         with open(cfg_path) as f:
@@ -249,7 +249,7 @@ def cmd_init(repo, args):
         return 3
     out = os.path.join(repo, ".site-check.json")
     if os.path.isfile(out) and not args.force:
-        print("Refusing to overwrite existing %s — it is the audit contract." % out)
+        print("Refusing to overwrite existing %s; it is the audit contract." % out)
         print("If you really want to regenerate it, pass --force.")
         return 3
     pages = find_pages(site_dir)
@@ -506,7 +506,7 @@ def run_audit(repo, cfg, live, wait, as_json, offline=False):
         }, indent=2))
     else:
         print("=" * 62)
-        print("SITE AUDIT — %s  (%d pages)" % (cfg["site_dir"], len(cfg["pages"])))
+        print("SITE AUDIT: %s  (%d pages)" % (cfg["site_dir"], len(cfg["pages"])))
         print("=" * 62)
         for sev, section, msg in results:
             icon = {"FAIL": "❌", "WARN": "⚠️ ", "OK": "✅"}[sev]

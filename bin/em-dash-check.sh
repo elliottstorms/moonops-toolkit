@@ -25,7 +25,10 @@ case "$f" in
   *) exit 0 ;;                                         # everything else: dashes are fine
 esac
 
-hits=$(grep -nE '—|–|&mdash;|&ndash;|&#8212;|&#8211;' "$f" 2>/dev/null)
+# The two dash characters are written as UTF-8 byte escapes so this file itself carries none
+# (it is published in the public toolkit, whose build fails on a literal dash).
+EM=$(printf '\342\200\224'); EN=$(printf '\342\200\223')
+hits=$(grep -nE "$EM|$EN|&mdash;|&ndash;|&#8212;|&#8211;" "$f" 2>/dev/null)
 if [ -n "$hits" ]; then
   {
     echo "em-dash-check: public copy uses no em or en dashes (typed or as HTML entities). Rewrite with a comma, colon, parentheses, or a new sentence. In $(basename "$f"):"

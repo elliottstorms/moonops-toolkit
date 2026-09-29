@@ -1,5 +1,5 @@
 #!/bin/bash
-# selftest.sh — prove the self-heal loop actually works, end to end, on demand.
+# selftest.sh: prove the self-heal loop actually works, end to end, on demand.
 #
 # The loop is a chain: SessionEnd hook -> distill.py gates -> queue -> heal pass
 # -> ledger + state.json. Every link has failed at least once (the 7/18 gate leak
@@ -51,7 +51,7 @@ fire_hook() {  # sid, transcript path
   printf '{"session_id":"%s","transcript_path":"%s","reason":"selftest"}' "$1" "$2" | bash "$HOOK" >/dev/null 2>&1
 }
 
-echo "self-heal selftest — $(date '+%Y-%m-%d %H:%M')"
+echo "self-heal selftest: $(date '+%Y-%m-%d %H:%M')"
 
 head_ "1. Files and syntax"
 for f in "$HOOK" "$SKILLS/distill.py" "$SKILLS/state_update.py" "$SKILLS/SKILL.md"; do
@@ -61,7 +61,7 @@ bash -n "$HOOK" 2>/dev/null && ok "hook parses (bash -n)" || bad "hook has a syn
 python3 -m py_compile "$SKILLS/distill.py" 2>/dev/null && ok "distill.py compiles" || bad "distill.py does not compile"
 python3 -m py_compile "$SKILLS/state_update.py" 2>/dev/null && ok "state_update.py compiles" || bad "state_update.py does not compile"
 python3 -c "import json;json.load(open('$ROOT/state.json'))" 2>/dev/null \
-  && ok "state.json is valid JSON" || bad "state.json is corrupt — every age gate reads this"
+  && ok "state.json is valid JSON" || bad "state.json is corrupt: every age gate reads this"
 
 head_ "2. Capture path (a real session ending gets queued)"
 mk_fresh SELFTEST-FRESH "$WORK/fresh.jsonl" "always snapshot before editing an infra script"
@@ -74,7 +74,7 @@ if [ -f "$Q/SELFTEST-FRESH.md" ]; then
     && bad "TRUST BOUNDARY BREACH: assistant text leaked into digest" \
     || ok "assistant text excluded (trust boundary holds)"
 else
-  bad "fresh session was NOT queued — capture is broken"
+  bad "fresh session was NOT queued: capture is broken"
 fi
 rm -f "$Q/SELFTEST-FRESH.md"
 
@@ -94,11 +94,11 @@ if [ -f "$Q/SELFTEST-COMPACT.md" ]; then
     && bad "compact-continuation summary leaked into digest as typed text" \
     || ok "compact-continuation summary excluded (isCompactSummary gate)"
 else
-  bad "compact fixture session was NOT queued — cannot prove the isCompactSummary gate"
+  bad "compact fixture session was NOT queued: cannot prove the isCompactSummary gate"
 fi
 rm -f "$Q/SELFTEST-COMPACT.md"
 
-head_ "3. Content-age gate (hook side — the 2026-07-19 fix)"
+head_ "3. Content-age gate (hook side: the 2026-07-19 fix)"
 grep -q 'skip-if-content-before' "$HOOK" && ok "hook passes --skip-if-content-before" \
   || bad "hook is missing the content-age gate (stale sessions will re-enter the queue)"
 OLD="$WORK/old.jsonl"
@@ -114,7 +114,7 @@ mv "$ROOT/state.json" "$WORK/state.hidden"
 mk_fresh SELFTEST-NOSTATE "$WORK/nostate.jsonl" "capture must survive a missing state file"
 fire_hook SELFTEST-NOSTATE "$WORK/nostate.jsonl"
 [ -f "$Q/SELFTEST-NOSTATE.md" ] && ok "captures with state.json absent (fails open)" \
-  || bad "missing state.json blocked capture — hook must never block a session exit"
+  || bad "missing state.json blocked capture: hook must never block a session exit"
 rm -f "$Q/SELFTEST-NOSTATE.md"
 echo 'not json {{{' > "$ROOT/state.json"
 mk_fresh SELFTEST-BADSTATE "$WORK/badstate.jsonl" "capture must survive a corrupt state file"
@@ -152,7 +152,7 @@ head_ "7. Bookkeeping surfaces"
 # with `|| true` instead and default only when the file is absent.
 CAPERR=$(grep -c 'ERROR:' "$ROOT/logs/capture.log" 2>/dev/null || true)
 CAPERR=${CAPERR:-0}
-[ "$CAPERR" -eq 0 ] && ok "no ERROR lines in capture.log" || bad "$CAPERR ERROR line(s) in capture.log — investigate"
+[ "$CAPERR" -eq 0 ] && ok "no ERROR lines in capture.log" || bad "$CAPERR ERROR line(s) in capture.log: investigate"
 LOGLEN=$(wc -l < "$ROOT/logs/capture.log" 2>/dev/null | tr -d ' ' || true)
 LOGLEN=${LOGLEN:-0}
 [ "$LOGLEN" -le 2000 ] && ok "capture.log within rotation cap ($LOGLEN lines)" || bad "capture.log not rotating ($LOGLEN lines)"
@@ -186,18 +186,19 @@ DUPHEAD=$(awk '
 # directly instead of extracting an awk out of the hook.
 COUNTER="$SKILLS/state_update.py"
 if [ -f "$COUNTER" ]; then
-  cat > "$WORK/fix1.md" <<'FIX'
-## Proposal 90 — something still open
+  D=$(printf '\342\200\224')  # the em dash, as bytes; the fixtures below need the real character
+  sed "s/@D@/$D/g" > "$WORK/fix1.md" <<'FIX'
+## Proposal 90 @D@ something still open
 **Status: open**
-## Proposal 91 — APPLIED 2026-01-01 — closed in header
+## Proposal 91 @D@ APPLIED 2026-01-01 @D@ closed in header
 body text
-## Proposal 92 — closed in body only
+## Proposal 92 @D@ closed in body only
 **Status: applied 2026-01-01, closed.**
-## Proposal 93 — applied then reopened
+## Proposal 93 @D@ applied then reopened
 **Status: applied 2026-01-01.**
-**Status: open — downgraded, the edit never landed**
-## Proposal 94 — discusses another proposal
-This block quotes `## Proposal 91 — APPLIED` and the word applied in prose.
+**Status: open @D@ downgraded, the edit never landed**
+## Proposal 94 @D@ discusses another proposal
+This block quotes `## Proposal 91 @D@ APPLIED` and the word applied in prose.
 **Status: open**
 FIX
   GOT=$(python3 -B "$COUNTER" --count-only "$WORK/fix1.md" 2>/dev/null)
@@ -208,8 +209,8 @@ FIX
   # correctly on 2026-08-28 only because its status sentence happened to end in
   # "closed"; a bare DECLINED would have read open forever, which is the
   # 2026-07-23 bug class under a different word (proposal 64, 2026-08-29).
-  cat > "$WORK/fix2.md" <<'FIX'
-## Proposal 95 — declined with no other decided word in the line
+  sed "s/@D@/$D/g" > "$WORK/fix2.md" <<'FIX'
+## Proposal 95 @D@ declined with no other decided word in the line
 **Status: DECLINED 2026-08-29.**
 FIX
   GOT=$(python3 -B "$COUNTER" --count-only "$WORK/fix2.md" 2>/dev/null)
@@ -224,7 +225,7 @@ FIX
     *)           bad "counter returned '$GOT' for a missing file instead of failing loudly" ;;
   esac
 else
-  bad "state_update.py missing — the proposal counter cannot be tested"
+  bad "state_update.py missing: the proposal counter cannot be tested"
 fi
 # The hook must call the shared counter, not carry a second copy of the rules.
 if grep -q 'count-only' "$HOME/.claude/bin/session-start.sh" 2>/dev/null &&

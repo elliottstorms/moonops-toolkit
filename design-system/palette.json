@@ -8,6 +8,8 @@
   "green": "#4aff9e",
   "amber": "#ffc86b",
   "rose": "#ff6b8a",
+  "gold": "#d8c074",
+  "text_lead": "#cdd6e8",
   "font_display": "Poppins",
   "font_mono": "JetBrains Mono"
 }

@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""state_update.py — atomically update fields in ~/.claude/self-heal/state.json.
+"""state_update.py: atomically update fields in ~/.claude/self-heal/state.json.
 
 Why this exists: every gate in the loop (the hook's content-age cutoff, the
 sweep watermark) reads state.json. Before this helper, heal passes rewrote the
-file with ad-hoc inline python — a truncate-then-write that a crash mid-write
+file with ad-hoc inline python, a truncate-then-write that a crash mid-write
 turns into corrupt JSON, silently disarming the gates. This writes to a temp
 file in the same directory and os.replace()s it into place: the file is always
 either the old state or the new state, never half of each.
@@ -27,7 +27,7 @@ Arithmetic assumes a single writer; counting the file does not.
 Also debuggable on its own:
     state_update.py --count-only [pending-review.md]
 
-Prints the resulting JSON to stdout. Exit 0 on success, 2 on any failure —
+Prints the resulting JSON to stdout. Exit 0 on success, 2 on any failure,
 and on failure the original file is untouched.
 """
 
@@ -49,7 +49,7 @@ PENDING = os.path.expanduser("~/.claude/self-heal/pending-review.md")
 #
 # Every rule here was a production bug in that awk first, dated in this loop's
 # ledger. Do not simplify any of them away:
-#   - the decided word may live in the HEADING (`## Proposal 12 — APPLIED …`)
+#   - the decided word may live in the HEADING (`## Proposal 12`, an em dash, `APPLIED …`)
 #     (2026-07-23: missing this read every closed proposal as open forever);
 #   - a `**Status:` line only closes when it names a decided outcome, so
 #     `**Status: DEFERRED` correctly stays open;
@@ -76,12 +76,12 @@ _DECIDED = re.compile("|".join(_DECIDED_WORDS), re.IGNORECASE)
 # TITLE, so a decided word can legitimately appear in it as subject matter: this
 # very rule was caught by proposal 64, whose own title is about the word DECLINED
 # and which self-closed the moment the vocabulary widened. The file's convention
-# is `## Proposal N — APPLIED 2026-07-28 — title`, so require the word to sit
+# is `## Proposal N`, em dash, `APPLIED 2026-07-28`, em dash, title; so require the word to sit
 # after a dash separator, and keep it case-sensitive on the uppercase convention
 # (the old awk's comment made the same point about "undecided" colliding).
-# `— PARTIALLY APPLIED` must still close, so the word need not be adjacent to the
+# An em dash then `PARTIALLY APPLIED` must still close, so the word need not be adjacent to the
 # dash, only after one.
-_DASH = re.compile(r"[—–-]")
+_DASH = re.compile("[\u2014\u2013-]")  # em dash, en dash, hyphen (escaped: this file is published)
 _DECIDED_UPPER = re.compile("|".join(_DECIDED_WORDS))
 
 

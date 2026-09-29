@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""distill.py — compress a Claude session transcript (JSONL) into a compact
+"""distill.py: compress a Claude session transcript (JSONL) into a compact
 learning digest for the self-heal loop.
 
 Design constraints (why this script is shaped the way it is):
@@ -7,8 +7,8 @@ Design constraints (why this script is shaped the way it is):
   tool_result content are excluded entirely: they are where prompt-injection
   from web pages / tool output would live, and they dwarf user text in size.
 - <system-reminder> spans inside user messages are harness noise (injected
-  CLAUDE.md, hook output), not the user — stripped.
-- Sidechain (subagent) and meta lines are not the user either — skipped.
+  CLAUDE.md, hook output), not the user: stripped.
+- Sidechain (subagent) and meta lines are not the user either: skipped.
 - Slash-command invocations are kept as one-line markers: which skills she
   reaches for, and with what arguments, is itself a signal.
 - Output is hard-capped so a heal pass over several sessions stays cheap.
@@ -22,6 +22,10 @@ import os
 import re
 import sys
 from datetime import datetime
+
+# Separator between a command and its args in a digest line. Escaped because this file is
+# published in the public toolkit; the character is the em dash the digests have always used.
+ARG_SEP = " \u2014 "
 
 SYSTEM_REMINDER_RE = re.compile(r"<system-reminder>.*?</system-reminder>", re.DOTALL)
 COMMAND_NAME_RE = re.compile(r"<command-name>(.*?)</command-name>", re.DOTALL)
@@ -94,7 +98,7 @@ def parse_user_turn(obj):
             args = COMMAND_ARGS_RE.search(content)
             arg_txt = clean(args.group(1))[:200] if args else ""
             name = cmd.group(1).strip()
-            return ("command", f"invoked {name}" + (f" — args: {arg_txt}" if arg_txt else ""))
+            return ("command", f"invoked {name}" + (f"{ARG_SEP}args: {arg_txt}" if arg_txt else ""))
         text = clean(content)
         return ("typed", text) if text else None
 
@@ -110,7 +114,7 @@ def parse_user_turn(obj):
                     parts.append(t)
             elif btype == "image":
                 attachments += 1
-            # tool_result and everything else: not the user — dropped.
+            # tool_result and everything else: not the user: dropped.
         if parts:
             prefix = f"[attached {attachments} image(s)] " if attachments else ""
             return ("typed", prefix + "\n".join(parts))
@@ -139,6 +143,7 @@ def main():
     counts = {"assistant": 0}
     commands = []
     queued = []
+    seen_uuids = set()
 
     try:
         with open(args.transcript, encoding="utf-8", errors="replace") as f:
@@ -149,6 +154,14 @@ def main():
                     continue
                 if not isinstance(obj, dict):
                     continue
+                # A compacted or rewritten transcript can carry the SAME row (same
+                # uuid) several times; 2a525fc5 on 2026-09-28 held each message x4.
+                # Skip by uuid only: a message she genuinely retyped has a new uuid.
+                uid = obj.get("uuid")
+                if uid:
+                    if uid in seen_uuids:
+                        continue
+                    seen_uuids.add(uid)
                 ltype = obj.get("type")
                 ts = obj.get("timestamp") or ""
                 if ts:
@@ -171,7 +184,7 @@ def main():
                 if parsed:
                     kind, text = parsed
                     if kind == "command":
-                        name = text.split(" — ")[0].replace("invoked ", "")
+                        name = text.split(ARG_SEP)[0].replace("invoked ", "")
                         commands.append(name)
                     turns.append((ts, kind, text))
     except OSError as e:
@@ -193,17 +206,17 @@ def main():
                 continue
             seen.add(text.strip())
             if kind == "command":
-                commands.append(text.split(" — ")[0].replace("invoked ", ""))
+                commands.append(text.split(ARG_SEP)[0].replace("invoked ", ""))
             turns.append((ts, kind, text))
         turns.sort(key=lambda t: t[0])
 
     typed = [t for t in turns if t[1] == "typed"]
 
     # Loop guard: a session whose first user turn invokes self-heal IS a heal
-    # run — learning from it would make the loop study itself. Two shapes reach
+    # run: learning from it would make the loop study itself. Two shapes reach
     # here: a slash-command invocation (kind "command"), and a scheduled-task
     # run, which arrives as a typed message whose text is a <scheduled-task>
-    # block. Catch both, but keep the typed case precise — only gate when the
+    # block. Catch both, but keep the typed case precise: only gate when the
     # turn is actually a scheduled-task block referencing the skip substring, so
     # an ordinary message that merely mentions "self-heal" is not swallowed.
     if args.skip_if_first_cmd and turns:
@@ -215,7 +228,7 @@ def main():
             return 3
 
     # General scheduled-task guard: a session whose ONLY typed messages are
-    # <scheduled-task> blocks carries no preference signal — it is an automated
+    # <scheduled-task> blocks carries no preference signal; it is an automated
     # run (self-heal-daily, treat-weekly-council, treat-pickup-brief, …), not
     # you working, and it burns a drain slot a real session needs. If she
     # typed any genuine follow-up in the same session, that is a real typed turn
@@ -226,18 +239,18 @@ def main():
 
     # Autonomous skill-launcher guard: some loops (gitscore weekly, etc.) start a
     # session with a machine-generated "run one full cycle in Automated mode"
-    # message. It is a launcher firing a skill, not you working — no
+    # message. It is a launcher firing a skill, not you working; no
     # preference signal, and it burns a drain slot. Gate a session whose EVERY
     # typed message is such a launch. A single genuine follow-up she types keeps
     # the session in (same escape hatch as the scheduled-task guard above).
     # The noun varies by loop ("full cycle", "full sync", "the full heal pass"),
-    # and a launchd `claude -p` run arrives bare — no <scheduled-task> wrapper —
+    # and a launchd `claude -p` run arrives bare (no <scheduled-task> wrapper),
     # so the earlier guard cannot see it: daily-sync's 07:20 run reached the
     # queue on 2026-07-28 and burned a slot. Match the invariant instead: the
     # literal "in automated mode" tail after a short "run … full …" head. That
     # tail is launcher boilerplate; you do not type it.
     # Widened 2026-08-20 (Proposal 54 option 4): the good-news launcher says
-    # "Invoke the good-news skill … in Automated mode" — no "run", no "full" —
+    # "Invoke the good-news skill … in Automated mode" (no "run", no "full"),
     # so the original head missed it and it burned a slot on 2026-08-19 AND
     # 2026-08-20. Second defect fixed here: the all() test required EVERY typed
     # message to match, so the harness's own network-interruption boilerplate
@@ -260,7 +273,7 @@ def main():
     # entire human content is a few characters teaches nothing by construction:
     # on 2026-08-19 four `Reply with exactly: OK` probes and two bare `hi`
     # sessions were queued, and they took 6 of the 10 slots in the 8/20 pass.
-    # Three conditions together, because the char floor ALONE is not safe —
+    # Three conditions together, because the char floor ALONE is not safe:
     # "back everything up!" is 19 characters and was real, load-bearing evidence
     # in that same pass. So also require that she invoked no slash command and
     # that the session did essentially nothing: a probe answers in one turn,
@@ -273,7 +286,7 @@ def main():
         return 3
 
     # Content-age gate. The sweep must not re-mine history that predates the loop
-    # (already covered by /insights) — but file mtime lies: a resumed or rewritten
+    # (already covered by /insights); but file mtime lies: a resumed or rewritten
     # transcript carries today's mtime over month-old content, so mtime-based
     # sweeping keeps dragging stale sessions back in. Gate on when the session
     # ACTUALLY happened. Fails open on an unparseable cutoff so a bad argument

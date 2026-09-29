@@ -1,5 +1,5 @@
 #!/bin/bash
-# site-link-check.sh — PostToolUse hook wrapper.
+# site-link-check.sh: PostToolUse hook wrapper.
 # Reads the Edit/Write hook JSON on stdin. If the edited file is an .html page
 # under the moonops site dir, runs the offline site audit (link integrity,
 # canonical LinkedIn URL, nav parity, OG tags, forbidden strings). On audit
@@ -18,8 +18,8 @@ AUDIT="$HOME/.claude/skills/site-check/site_audit.py"
 f=$(jq -r '.tool_input.file_path // .tool_response.filePath // empty' 2>/dev/null)
 
 case "$f" in
-  "$SITE_DIR"/*.html) ;;                # a site page — check it
-  *) exit 0 ;;                          # anything else — not our concern
+  "$SITE_DIR"/*.html) ;;                # a site page: check it
+  *) exit 0 ;;                          # anything else: not our concern
 esac
 
 [ -f "$AUDIT" ] || exit 0               # audit engine gone: don't block edits
@@ -27,7 +27,7 @@ esac
 out=$(python3 "$AUDIT" --repo "$REPO" --offline 2>&1)
 if [ $? -eq 2 ]; then                   # 2 = FAIL (0 = pass/warn, 3 = usage err)
   {
-    echo "site-check FAILED after editing $(basename "$f") — fix before shipping:"
+    echo "site-check FAILED after editing $(basename "$f"); fix before shipping:"
     echo "$out" | grep -E "FAIL|❌|forbidden|missing|nav|linkedin" || echo "$out"
   } >&2
   exit 2

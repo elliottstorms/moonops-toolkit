@@ -35,8 +35,8 @@ or calendar entry has failed.
 ## Output format (template)
 
 ```
-# Post-Mortem: <name> (<start> – <horizon>)
-*Written as a pre-mortem on <today> — dated forward and worked backward. Timeline is a
+# Post-Mortem: <name> (<start> to <horizon>)
+*Written as a pre-mortem on <today>, dated forward and worked backward. Timeline is a
 plausible reconstruction; numbers are illustrative of base rates. Root causes are real today.*
 
 ## The one-line verdict

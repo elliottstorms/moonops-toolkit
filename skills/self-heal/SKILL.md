@@ -186,7 +186,7 @@ Before the first edit to each file in a run, snapshot it:
 All edits live between markers, appended at the end of the body if absent:
 
 ```markdown
-<!-- self-heal:start — managed by /self-heal; hand-edits above this line are never touched -->
+<!-- self-heal:start (managed by /self-heal; hand-edits above this line are never touched) -->
 ## Learned from sessions
 - Prefer neural TTS voices; never default to the stock system voice. (2026-01-05, "the audio is awful")
 <!-- self-heal:end -->

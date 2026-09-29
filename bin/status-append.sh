@@ -1,5 +1,5 @@
 #!/bin/sh
-# status-append.sh — append one event to ~/Claude/STATUS.md (the Code → Cowork reverse loop).
+# status-append.sh: append one event to ~/Claude/STATUS.md (the Code → Cowork reverse loop).
 # The daily Cowork sync reads new lines and auto-closes matching TASKS.md items / raises alerts.
 #
 # Usage: status-append.sh <surface> <type> <summary> [url_or_commit] [verified]

@@ -12,7 +12,7 @@
 
 ## Core personality
 
-> The 3–5 traits that actually change how someone should work with you. Name each and give one
+> The 3 to 5 traits that actually change how someone should work with you. Name each and give one
 > concrete line. Examples of trait headers: high-agency, analytical skeptic, builder, humor style.
 
 ## Communication preferences
@@ -37,7 +37,7 @@
 
 ## What I'm working on now
 
-> The 1–3 active efforts, each with enough context that a fresh session can pick up cold. Update this.
+> The 1 to 3 active efforts, each with enough context that a fresh session can pick up cold. Update this.
 
 ## How to help me best
 

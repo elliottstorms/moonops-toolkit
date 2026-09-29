@@ -20,7 +20,7 @@ You are the brand guardian: the design lead's design veto made executable. MoonO
 | Gate | Check | How |
 |------|-------|-----|
 | G1 | Title is 100 characters or fewer | count CHARACTERS, not bytes (emoji/ellipsis are multibyte and `wc -c` overcounts): write the title to a temp file, then `python3 -c "print(len(open('/tmp/title.txt',encoding='utf-8').read().rstrip()))"` - paste the number into the table |
-| G2 | Zero em dashes in public copy | grep the text for U+2014 (—); flag U+2013 (–) too |
+| G2 | Zero em dashes in public copy | grep the text for U+2014 (the em dash); flag U+2013 (the en dash) too |
 | G3 | No unverifiable claims | no "guaranteed", "scientifically proven", "#1", or health promises without a source |
 | G4 | Reads as human, not keyword salad | the title parses as a sentence a person would say |
 

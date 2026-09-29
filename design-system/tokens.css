@@ -1,16 +1,16 @@
-/* MoonOps Design Tokens — extracted from the live moonops.org (2026-07-06).
+/* MoonOps Design Tokens, extracted from the live moonops.org (2026-07-06).
    Single source of truth. Import this file or copy the :root block.
    Rule: never hardcode these values in a component; always use the variable. */
 
 :root {
   /* ---- color ---- */
-  --ink: #0d162a;        /* page background — deep navy, never pure black */
+  --ink: #0d162a;        /* page background: deep navy, never pure black */
   --card: #16224a;       /* raised surfaces: cards, panels, nav */
-  --cream: #f6f0eb;      /* primary text — warm, never pure white */
+  --cream: #f6f0eb;      /* primary text: warm, never pure white */
   --steel: #92a2c4;      /* secondary text, labels, muted UI */
-  --purple: #b95cff;     /* brand accent — links, primary actions, highlights */
+  --purple: #b95cff;     /* brand accent: links, primary actions, highlights */
   --purple-bright: #c879ff; /* hover / high-contrast purple for small text on card surfaces (≥4.5:1 on --card) */
-  --gold: #d8c074;       /* the channel crescent only: lab.html hero crescent and its nav moon (Owner 2026-09-11, the design lead gate); never on portfolio pages */
+  --gold: #d8c074;       /* the channel crescent only: lab.html hero crescent, its nav moon, and the og-lab share card (Owner 2026-09-11, the design lead gate); never on portfolio pages */
   --gold-bright: #e6cf87; /* crescent highlight stop, same scope */
   --green: #4aff9e;      /* success/live + the mono-label/data accent (eyebrows, stats, timeline years); never buttons, CTAs, or large fills */
   --amber: #ffc86b;      /* warnings, "needs attention" (derived, harmonizes with cream) */
@@ -19,6 +19,9 @@
   --text-body: #dbe2f0;  /* long-form body copy on gradient pages */
   --grad-mid: #131d3a;   /* body gradient mid stops (30% / 78%) */
   --grad-deep: #1a1c44;  /* body gradient deepest stop (55%) */
+  --ink2: #141f3d;       /* recessed fill between ink and card: timeline dots, the human marker disc, the turntable disc gradient (ttmoon) mid stop, all on the home page. Declared in the page :root blocks since the 2026-07-03 repo import; tokenized 2026-09-29, pixel-identical. Near-twin of --grad-mid; merging the two would move live pixels, so it waits for a redesign */
+  --green-glint: #f4fff9; /* the one highlight stop in the .shine sweep across green section labels (since 2026-09-23); never a fill, border, or text colour on its own */
+  --steel-glint: #f1f4fb; /* same sweep on steel text (the home page footer label only); same limits as --green-glint */
 
   /* ---- type ---- */
   --font-display: 'Poppins', sans-serif;      /* headings, hero, buttons */
@@ -26,7 +29,7 @@
   --font-serif: Georgia, serif;               /* pull quotes / testimonials only */
 
   /* ---- rhythm ---- */
-  --radius: 16px;        /* cards and buttons share one radius (legacy 11–18px converge here over time) */
+  --radius: 16px;        /* cards and buttons share one radius (legacy 11 to 18px converge here over time) */
   --radius-pill: 999px;  /* chips, badges, status pills */
   --gap: 20px;           /* default component gap */
   --pad-card: 22px;      /* card interior padding */
@@ -37,7 +40,7 @@
   --ease: .15s ease;                /* one duration, one easing (.2s reserved for image zooms) */
 }
 
-/* Base surface — every MoonOps page starts here */
+/* Base surface: every MoonOps page starts here */
 .mo-base {
   background: var(--ink);
   color: var(--cream);
@@ -45,7 +48,7 @@
   -webkit-font-smoothing: antialiased;
 }
 
-/* The mono "eyebrow" label — MoonOps' most recognizable cue */
+/* The mono "eyebrow" label: MoonOps' most recognizable cue */
 .mo-eyebrow {
   font-family: var(--font-mono);
   font-size: 12px;
