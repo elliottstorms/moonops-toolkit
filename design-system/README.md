@@ -36,6 +36,13 @@ opportunistically, never as a repaint), pill radius on chips; hover motion is fo
 and other hover motions are allowed where they suit the element (you, 2026-09-23); one shadow.
 Nothing bounces, nothing spins.
 
+**The nav moon waxes as you read (Owner ask 2026-10-07, brand gate FIX applied):** the moonmark is
+the brand crescent inside a green scroll-progress ring that never touches it (about 3 units clear).
+Page scroll slides the crescent's own shadow off along its axis, never rotating it, so the moon is
+full by 88% of the page; only then does a thin rim glow fade in. Scroll-driven CSS only, inside
+`prefers-reduced-motion: no-preference`; at rest and under reduced motion it is the still crescent.
+Gold on /lab. The SVG's literal hex stops fall under the SVG-internals exception below.
+
 **Named exceptions (Council resolution 2026-07-11, 5-0):** the index turntable set-piece is the
 one sanctioned spin (it's a record; records spin) and must stay inside `prefers-reduced-motion`;
 citing it to justify a second spin anywhere is a veto. SVG internals (the moonmark gradient stops on all
