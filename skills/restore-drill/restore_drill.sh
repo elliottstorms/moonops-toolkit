@@ -174,6 +174,16 @@ while IFS='|' read -r s d; do
   done
 done < "$T/.cps"
 
+# The staging repo path, for the four root files the mirror holds but backup.sh never copies
+# (.github .gitignore .gitleaks.toml .gitleaksignore, compared further down). One STAGE="..."
+# line at column 0, a trailing comment allowed, $HOME expanded, no other expansion accepted.
+MC_ROOT=""
+if [ "$(grep -c '^STAGE="' "$BACKUP_SH" || true)" = 1 ]; then
+  MC_ROOT=$(sed -n 's/^STAGE="\([^"]*\)".*$/\1/p' "$BACKUP_SH" | sed "s|\\\$HOME|$HOME|g")
+  case "$MC_ROOT" in ''|*'$'*|*'`'*) MC_ROOT="" ;; esac
+fi
+[ -n "$MC_ROOT" ] && [ -d "$MC_ROOT" ] || bk_problem "the STAGE=\"...\" line (staging repo path behind the four root files .github .gitignore .gitleaks.toml .gitleaksignore)"
+
 if [ -n "$bk_problems" ]; then
   echo "RESTORE DRILL: CANNOT RUN: this drill reads its copy rules out of $BACKUP_SH, and these parts no longer have the shape it expects:$bk_problems"
   echo "  Update restore_drill.sh to match backup.sh before trusting any verdict. Nothing was compared."
@@ -374,6 +384,29 @@ while IFS='|' read -r s d; do
   if grep -qxF -- "$d" "$T/.checked"; then continue; fi
   check "$HOME/$s" "$d" < /dev/null
 done < "$T/.cpfiles"
+
+# ---- the mirror's own configuration (added 2026-10-09) ----
+# .github/, .gitignore, .gitleaks.toml and .gitleaksignore are written and committed in the
+# staging repo itself. backup.sh never copies them (its rsync --delete runs per subdirectory,
+# never at the repo root, which is why they survive a backup), so no live source stands
+# behind them, and until 2026-10-09 they were exempt by name and compared with nothing.
+# That let the 2026-10-06 quarterly proofs report INCOMPLETE the day .gitleaksignore
+# (committed 2026-10-01, 5dce882) joined them, and it meant a hand edit to either gitleaks
+# file on GitHub would have passed unseen: a broad line there blinds the secret scanner.
+# The staging repo's working tree is where they are authored, so the cloud copy is compared
+# with that. The path (MC_ROOT) is read out of backup.sh in the rule-reading phase above,
+# tolerating a trailing comment on the line, and an unreadable path is CANNOT RUN (exit 2)
+# like every other unreadable rule: until 2026-10-10 it was skipped and still read PASS, the
+# one place this drill failed open (found by the 2026-10-10 review). A root file that exists
+# only in the mirror (deleted from the staging tree) is still the benign direction, as for
+# every mirror-only file, but it is named out loud because the next backup pushes that
+# deletion, and for .gitleaksignore that drops the historical fingerprint exemptions.
+for mc in .github .gitignore .gitleaks.toml .gitleaksignore; do
+  if [ ! -e "$MC_ROOT/$mc" ] && [ -e "$T/mirror/$mc" ]; then
+    echo "WARN: $mc exists only in the mirror; it is gone from the staging tree $MC_ROOT, so the next backup pushes its deletion"
+  fi
+  check "$MC_ROOT/$mc" "$mc"
+done
 
 # ---- the rule-driven scopes (added 2026-09-23) ----
 # R is backup.sh's own wrapper plus a dry run: `-n -i` lists what would be copied
@@ -583,14 +616,16 @@ if [ "$HAVE_WS" = 1 ]; then
 fi
 
 # ---- coverage: every file in the mirror falls under some check above (2026-09-23) ----
-# The mirror's own configuration (.github/, .gitignore, .gitleaks.toml) is no copy of
-# anything live. Anything else outside every check is a scope backup.sh copies that
-# this drill does not know yet, and a pass would say nothing about it.
+# Anything outside every check is a scope backup.sh copies that this drill does not know
+# yet, and a pass would say nothing about it. Nothing is exempt by name: the mirror's own
+# configuration (.github/, .gitignore, .gitleaks.toml, .gitleaksignore) was until
+# 2026-10-09 and is now compared above, so a new root-level file outside that list shows
+# up here (for example .gitleaksignore.bak) instead of passing silently.
 ( cd "$T/mirror" && find . -path ./.git -prune -o \( -type f -o -type l \) -print | sed 's|^\./||' ) \
   | LC_ALL=C sort > "$T/.all"
 awk 'NR == FNR { pre[++n] = $0; next }
      { for (i = 1; i <= n; i++) if ($0 == pre[i] || index($0, pre[i] "/") == 1) next; print }' \
-  "$T/.checked" "$T/.all" | grep -vE '^(\.github/|\.gitignore$|\.gitleaks\.toml$)' > "$T/.unchecked" || true
+  "$T/.checked" "$T/.all" > "$T/.unchecked"
 n_unchecked=$(wc -l < "$T/.unchecked" | tr -d ' ')
 if [ "$n_unchecked" -gt 0 ]; then
   echo "unchecked: $n_unchecked file(s) in the mirror sit outside every check above, so this run proves nothing about them:"

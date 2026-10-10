@@ -33,6 +33,21 @@ check. If `backup.sh` changes shape there, the drill stops with `CANNOT RUN`
 instead of comparing against rules that no longer apply. A scope group that a
 `backup.sh` does not configure at all is skipped, not failed.
 
+The mirror also holds its own configuration at the repo root: `.github/`,
+`.gitignore`, `.gitleaks.toml` and `.gitleaksignore`. `backup.sh` never copies
+these; they are written and committed in the staging repo, and they survive a
+backup because its `rsync --delete` runs per subdirectory, never at the root.
+Since 2026-10-09 the drill compares the cloud copy of each with the staging
+repo's working tree (the path is read out of `backup.sh`), so an edit made only
+on GitHub shows as drift, and a new root-level file outside that list (a stray
+`.gitleaksignore.bak`, say) is reported as unchecked instead of passing. Before
+that date they were exempt by name and compared with nothing, which is how a new
+root file read as `INCOMPLETE` on 2026-10-06. If the staging path cannot be read
+out of `backup.sh`, the drill reports `CANNOT RUN` (exit 2) like every other
+unreadable rule; until 2026-10-10 it skipped the four and still read `PASS`, the one
+place it failed open. A root file that exists only in the mirror is reported with a
+`WARN` line (the next backup pushes that deletion) and stays the benign direction.
+
 ## Reading the result
 
 The verdict is the last `RESTORE DRILL:` line (exit code in brackets):
