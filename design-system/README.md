@@ -87,13 +87,22 @@ button, body text or anything else is a veto.
    subject (a bed, a fan, a chair, a cottage) goes on a tile only when she has asked for that
    image, in her own words, for that tile. A design gate asking for a "distinct focal subject" is
    not her asking, and it is no longer an available fix: she has pulled a drawn object off a tile
-   twice (the ceiling fan on 2026-09-11, the bed on 2026-09-19). The grid is still the unit of
-   review and a recolour still fails, but the remedy is a different tint, a different or new sky
-   cue, or different copy, never an object. Tiles she approved with a subject before this rule
-   (ridge, bluff, tor) stand as approved. Enforced in `moonops-rain/make_thumb_v2.py`, which
-   refuses `--focal` without `--owner-asked`. Record:
-   `moonops-rain/council/RULING_2026-09-19_no-added-images-on-thumbnails.md`. Original wording of
-   this rule: `archive/README-channel-rule-3-pre-2026-09-19.md`.
+   three times (the ceiling fan on 2026-09-11, the bed on 2026-09-19, the bluff on 2026-10-14).
+   The grid is still the unit of review and a recolour still fails, but the remedy is a different
+   tint, a different or new sky cue, or different copy, never an object. **No approved tile with a
+   subject stands any more:** the three she had approved before the rule (ridge, bluff, tor) were
+   all cleared on her word (bluff and tor 2026-10-15 morning, ridge 2026-10-15 afternoon, her 1A).
+   **A ruling on a class reopens every earlier approval in that class (her 2A, 2026-10-15):** when
+   she rules against a kind of thing, anything she approved earlier that belongs to that kind is
+   re-shown to her, with the image in the message, before it goes or stays live; "a decision she
+   made stays made" never outranks a newer ruling about the class the decision belongs to. The
+   premiere-day briefing card carries the tile of every upcoming premiere so nothing airs unseen
+   (`moonops-rain/daily_brief.py`, from 2026-10-15). Enforced in `moonops-rain/make_thumb_v2.py`,
+   which refuses `--focal` without `--owner-asked`. Records:
+   `moonops-rain/council/RULING_2026-09-19_no-added-images-on-thumbnails.md`,
+   `moonops-rain/council/GATE_2026-10-14_nosubject-tiles.md`,
+   `moonops-rain/council/GATE_2026-10-15_ridge-tile.md`. Original wordings of this rule:
+   `archive/README-channel-rule-3-pre-2026-09-19.md`, `archive/README-channel-rule-3-pre-2026-10-15.md`.
 4. **The caretaker line** (kid-friendly nightlight, pet-friendly) extends the brand; it never
    turns into stimulation content ("Dog TV" motion is a non-goal).
 5. the design lead's veto is real: a render that fails the "calm, beautiful, 2am viewer" bar doesn't ship,
