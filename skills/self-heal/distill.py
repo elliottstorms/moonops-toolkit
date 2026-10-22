@@ -31,9 +31,11 @@ SYSTEM_REMINDER_RE = re.compile(r"<system-reminder>.*?</system-reminder>", re.DO
 COMMAND_NAME_RE = re.compile(r"<command-name>(.*?)</command-name>", re.DOTALL)
 COMMAND_ARGS_RE = re.compile(r"<command-args>(.*?)</command-args>", re.DOTALL)
 # Harness-injected spans that arrive as user-role lines but are not the user:
-# background-task completion notices and local command stdout echoes.
+# background-task completion notices, local command stdout echoes, and the
+# desktop app's side-session status pings.
 HARNESS_NOISE_RE = re.compile(
-    r"<task-notification>.*?</task-notification>|<local-command-stdout>.*?</local-command-stdout>",
+    r"<task-notification>.*?</task-notification>|<local-command-stdout>.*?</local-command-stdout>"
+    r"|<side-sessions-event>.*?</side-sessions-event>",
     re.DOTALL,
 )
 
