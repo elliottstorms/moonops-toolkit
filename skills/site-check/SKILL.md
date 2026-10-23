@@ -35,7 +35,8 @@ python3 ~/.claude/skills/site-check/site_audit.py --repo ~/Claude/Projects/moono
 
 - Exit `0` = PASS (warnings allowed) · `2` = audit failures · `3` = usage error, missing
   or invalid config. On `3`, read the printed message: it says exactly what's wrong.
-- ❌ items MUST be fixed before deploy.
+- ❌ items get fixed before deploy, because they are audit failures (exit `2`) and the ship
+  pipeline does not proceed on a failing audit.
 - ⚠️ items: report them to the user, EXCEPT these known-accepted ones which you silently
   ignore: (a) title-length warnings on `dispatches.html` and `offerings.html`,
   (b) "bot-blocked domain" warnings for skip_domains (LinkedIn etc.). Fix warnings only
@@ -56,7 +57,8 @@ python3 ~/.claude/skills/site-check/site_audit.py --repo ~/Claude/Projects/moono
 2. **Summarize every change you make**: file, line, before → after. If you remove ANY
    nav item or content block, say so explicitly and get confirmation first.
 3. **Never edit `.site-check.json` to make a failure pass** unless the user has explicitly
-   approved changing the contract (e.g., they intentionally renamed a nav item).
+   approved changing the contract (e.g., they intentionally renamed a nav item), because the
+   contract is the guard and a guard edited to pass protects nothing.
 4. URLs are compared character-by-character against the config. The canonical LinkedIn URL
    is `linkedin.com/in/your-handle` (WITH the hyphen): verified live 2026-07-06.
 5. Re-run the audit after every fix. If the same item still fails after 2 fix attempts, or

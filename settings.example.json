@@ -114,5 +114,22 @@
   },
   "skipWorkflowUsageWarning": true,
   "theme": "dark",
-  "agentPushNotifEnabled": true
+  "agentPushNotifEnabled": true,
+  "modelSettings": {
+    "claude-opus-5-5": {
+      "autoCompactWindow": 400000
+    }
+  },
+  "pluginConfigs": {
+    "cc-plugin-agents-md@builtin": {
+      "options": {
+        "instructionFiles": "claude-md"
+      }
+    },
+    "agents-md@builtin": {
+      "options": {
+        "instructionFiles": "claude-md"
+      }
+    }
+  }
 }

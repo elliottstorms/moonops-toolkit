@@ -108,7 +108,7 @@ verified vs not, and any blocker or objection surfaced.
 ## Hard rules
 
 1. Newest one only; empty inbox = stop, never invent work.
-2. Never reopen a ✅ locked decision: execute as-is, object (if needed) in Outcome.
+2. Execute a ✅ locked decision as-is and put any objection in Outcome (Step 3), because the lock is a choice you already made and a decision she made stays made.
 3. Verified means a check actually ran: never mark `verified=yes` on assumption.
 4. Every external effect gets a `status-append.sh` line; then the file moves to `done/`.
 

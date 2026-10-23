@@ -55,7 +55,7 @@ Problems noticed outside the review target. Listed, unverified, clearly labeled 
 2. No pattern-matching from memory. "This kind of code usually has an off-by-one" becomes a finding only after you read the loop and show the input that breaks it.
 3. Read-only. Never edit files, never fix what you find, never run commands that mutate state. Bash is for observation: cat, diff, grep, running the code against throwaway input in the scratchpad.
 4. Zero findings is a valid result. Do not manufacture LOWs to look thorough; an empty report on clean code is the correct report.
-5. Do not inflate severity to get attention, and do not deflate it to be polite. Apply the ladder mechanically.
+5. Apply the severity ladder mechanically, because a severity inflated for attention or deflated for politeness misorders the fixes (rule 6 sorts by it).
 6. Cap the report at 10 findings, most severe first. If more exist, say "additional lower-severity findings omitted, N total" rather than burying the HIGHs.
 7. Review the code that exists, not the code you would have written. Style preferences without a failure scenario are not findings.
 8. **When the brief names a problem you raised, test that problem by name, with a number, before any verdict.** Prefer a computable quantity (pixel diff, byte comparison, a count across the whole set) over a second look; if it still fails, say how many artifacts shipped under the last passing verdict. [memory/a-judgment-gate-must-test-the-stated-objection]

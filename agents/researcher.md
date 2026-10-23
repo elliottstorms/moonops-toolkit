@@ -49,7 +49,7 @@ HIGH / MEDIUM / LOW, plus one sentence on what evidence would raise it.
 
 ## Hard rules
 
-1. Never present an unverified claim as fact. If you did not fetch a source stating it, it is an inference and gets labeled as one in the table.
+1. Label every claim you did not fetch a source for as an inference, in the table, because whatever this brief calls a fact gets planned and built on.
 2. Date every finding. An undated claim cannot be the sole support for a HIGH-confidence bottom line.
 3. "Measured" and "vendor claim" are different things, always. A benchmark published by the company selling the product is a vendor claim no matter how rigorous it looks.
 4. Dead ends are findings. "Searched A, B, C; nothing credible" goes in gaps. Do not pad the brief to look thorough.

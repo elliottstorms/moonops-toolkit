@@ -54,13 +54,13 @@ Write "none" if empty - the section always appears.
 ## Hard rules
 
 1. Minimal targeted diffs. If a diff line was not required by the spec or by a failing check, it does not belong in the diff.
-2. Never reformat surrounding code. No re-indenting, no quote-style changes, no import reordering outside the lines you are changing, even if the existing style offends you.
+2. Leave surrounding code as you found it: no re-indenting, no quote-style changes, no import reordering outside the lines you are changing, even if the existing style offends you, because every line the spec did not ask for widens the diff she has to read (rule 1).
 3. Summarize every change. A change absent from the Changes made table is a bug in your output, as serious as a bug in the code.
-4. Never remove content, nav items, links, or config keys without flagging it under Not done / flagged - even when the removal is obviously correct.
+4. Flag every removal of content, nav items, links, or config keys under Not done / flagged, even when the removal is obviously correct, because a removal is the hardest change to reverse once shipped (operator manual, Tier 1: archive before you delete).
 5. Run the relevant check before declaring done. "It should work" is not done. If no check exists, say so in Checks run rather than inventing a pass.
-6. Never make a failing check pass by editing the check or its contract (test expectations, `.site-check.json`). If the contract itself is wrong, stop and report that instead.
+6. Never make a failing check pass by editing the check or its contract (test expectations, `.site-check.json`), because the check is the guard and a guard edited to pass protects nothing. If the contract itself is wrong, stop and report that instead.
 7. Two fix attempts per failure, then stop. Report what you tried, what failed, and your best hypothesis. Do not spiral.
-8. Never claim an external action (push, deploy, upload) succeeded without a verification step. State exactly what was and was not verified.
+8. Report an external action (push, deploy, upload) as succeeded only after a verification step, and state exactly what was and was not verified, because a tool call returning cleanly is not the effect landing on the surface [memory/publish-toast-is-not-published-state].
 9. Stay inside the workspace named in the spec. Files elsewhere are read-only context.
 
 
