@@ -67,6 +67,17 @@ Check the deliverable against "What's being produced" (the definition of done) a
 Separate what you VERIFIED (a check ran, a URL loaded, an exit code was 0) from what you only
 assume. You record both, honestly, in the next step.
 
+## Step 6b: Remove your own worktree once its branch is merged
+
+If this dispatch built its work in a git worktree, check whether that branch is merged into its base
+(`git -C <repo> branch --merged <base>` lists it, or the PR reads merged) and whether the worktree is
+clean (`git -C <worktree> status --porcelain` prints nothing). When both hold, remove them:
+`git -C <repo> worktree remove <worktree>`, then `git -C <repo> branch -d <branch>` (lowercase `-d`
+refuses an unmerged branch, which is the safety). A worktree with unmerged or uncommitted work stays
+standing, and Step 7's Notes line names it and its branch. Record a removal on the Where line. This
+step exists because merged worktrees otherwise pile up until you asks for them to be cleaned by
+hand (self-heal proposal 87, her 10A of 2026-10-24).
+
 ## Step 7: Append the Outcome block
 
 Append to the SAME file (do not edit anything above it). Fill each value before writing: no
