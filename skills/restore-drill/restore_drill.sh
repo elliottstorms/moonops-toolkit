@@ -98,6 +98,19 @@ if grep -q '^WS_EXTRA="' "$BACKUP_SH"; then HAVE_WS=1; fi
 if [ "$(bk_count "--include='com.moonops.*.plist'")" != 0 ]; then HAVE_LAUNCHD=1; fi
 PII_RE_PROJ=""; PII_RE_LI=""; EMB_RE=""; PROJ_SRC=""; PROJ_ALLOW=""; WS_EXTRA=""; LI_SRC=""
 CMD_PROJ=""; CMD_LI=""; CMD_LAUNCHD=""; CMD_WS=""; CMD_WS_AUDIO=""; PLD_DEFAULT=""; PLD_CASE=""
+PROJ_PATH_HOLD=""; PII_RE_NARROW=""; PII_NARROW_PROJ=""
+
+# 2026-10-26: R() gained archive excludes (no filter can read inside a bundle, zip or
+# tar.gz), and the plain folder scopes below, which diff live against the clone, kept
+# their own fixed noise list, so a skill's tar.gz read as REAL DRIFT. Every folder scope
+# in backup.sh copies through R() (single files use cp and a plain diff -q), so the
+# diff now skips exactly the names R() skips, read from R() itself rather than restated.
+R_DIFF_X=""
+if bk_rbase; then
+  R_DIFF_X=$(printf '%s\n' "$BK_VAL" | tr ' ' '\n' | awk 'p == "--exclude" { print } { p = $0 }' \
+    | tr -d "'" | sed 's|/$||')
+fi
+[ -n "$R_DIFF_X" ] || bk_problem "the --exclude names in the R() rsync wrapper"
 
 if [ $((HAVE_PROJ + HAVE_LI + HAVE_WS + HAVE_LAUNCHD)) -gt 0 ]; then
   if bk_rbase; then eval "_bk_R() { $BK_VAL; }"; else bk_problem "the R() rsync wrapper that every scope copies with"; fi
@@ -108,7 +121,12 @@ if [ $((HAVE_PROJ + HAVE_LI + HAVE_WS)) -gt 0 ]; then
   # both, so a pattern that reads back empty (which would match everything, hold back
   # every file, and leave nothing to compare) cannot slip through as a clean pass.
   CANARY_HIT=$(grep -F "if ! printf '" "$BACKUP_SH" | cut -d"'" -f2 | sed 's/\\n$//')
-  CANARY_MISS=$(grep -F "if printf '" "$BACKUP_SH" | cut -d"'" -f2 | sed 's/\\n$//')
+  # The innocent line is the "if printf '" whose next line ABORTS. Since 2026-10-23 a
+  # second "if printf '" sits beside it (a negative canary for two retired terms that only
+  # warns), and taking every such line stopped this drill with CANNOT RUN from that day
+  # until 2026-10-26. Keying on the abort keeps exactly backup.sh's own innocent line.
+  CANARY_MISS=$(awk -v q="'" 'index($0, "if printf " q) { l = $0; if ((getline n) > 0 && n ~ /ABORT/) print l }' \
+    "$BACKUP_SH" | cut -d"'" -f2 | sed 's/\\n$//')
   one_line "$CANARY_HIT" && one_line "$CANARY_MISS" || bk_problem "the two canary lines that prove the privacy patterns"
   EMB_RE=$(sed -n "s/.*grep -rlE '\(data:[^']*\)'.*/\1/p" "$BACKUP_SH" | sort -u)
   one_line "$EMB_RE" || bk_problem "the embedded-media pattern (one grep -rlE 'data:...' pattern, the same everywhere)"
@@ -139,6 +157,24 @@ if [ "$HAVE_PROJ" = 1 ]; then
     bk_problem "the PROJ_LOCAL_DIR case line (only project) PROJ_LOCAL_DIR=\"dir\" ;; entries)"
   fi
   bk_shape 1 '( cd "$PROJ_SRC/$p" && grep -rilE \' "the projects privacy holdback (case-insensitive, every file)"
+  # Each project's pattern (added 2026-10-26): PII_RE_PROJ, except the one project that
+  # PII_NARROW_PROJ names, which backup.sh reads with the narrower PII_RE_NARROW. Optional,
+  # so a backup.sh without it still runs here; when present, the line that applies it is
+  # pinned and the drill uses the same pattern for that project, or the files the narrower
+  # list releases would read as leaks.
+  bk_shape 1 '"$PROJ_PII_RE" \' "the projects privacy holdback reads the per-project pattern"
+  if grep -q "^PII_RE_NARROW='" "$BACKUP_SH"; then
+    if bk_sq PII_RE_NARROW && canary_ok "$BK_VAL"; then PII_RE_NARROW="$BK_VAL"; else bk_problem "PII_RE_NARROW, or it fails backup.sh's own canary"; fi
+    if bk_dq PII_NARROW_PROJ; then PII_NARROW_PROJ="$BK_VAL"; else bk_problem "PII_NARROW_PROJ, the one project read with PII_RE_NARROW"; fi
+    bk_shape 1 '[ "$p" = "$PII_NARROW_PROJ" ] && PROJ_PII_RE="$PII_RE_NARROW"' "the narrower privacy pattern applies to that one project alone"
+  fi
+  # Single files held back by path (added 2026-10-26): optional, one line, and applied
+  # by one loop. Without this the drill expected them, and passed only while a
+  # project's own .gitignore happened to list the same file.
+  if grep -q '^PROJ_PATH_HOLD="' "$BACKUP_SH"; then
+    if bk_dq PROJ_PATH_HOLD; then PROJ_PATH_HOLD="$BK_VAL"; else bk_problem "PROJ_PATH_HOLD"; fi
+    bk_shape 1 'for h in $PROJ_PATH_HOLD; do' "the by-path holdback loop"
+  fi
 fi
 if [ "$HAVE_LI" = 1 ]; then
   if bk_sq PII_RE_LI && canary_ok "$BK_VAL"; then PII_RE_LI="$BK_VAL"; else bk_problem "PII_RE_LI, or it fails backup.sh's own canary"; fi
@@ -294,10 +330,16 @@ classify_out() {
 # drill that is permanently red is a drill nobody reads. Deliberately narrow:
 # a directory holding any file that is not on this noise list still reports
 # drift, which is the case tests/ below actually exercises.
+# Since 2026-10-26 it also skips every name R() excludes (R_DIFF_X), so a folder holding
+# only, say, a tar.gz does not read as REAL DRIFT now that R() keeps archives out.
 _restorable_content() {
-  find "$1" -type f \
-    ! -name '.DS_Store' ! -name '*.pyc' ! -name '*.log' ! -name '*.tmp' \
-    ! -name '.backup-needed' ! -path '*/__pycache__/*' 2>/dev/null | head -1
+  ( set -f; IFS='
+'
+    _d="$1"; set --
+    for _x in $R_DIFF_X; do set -- "$@" ! -name "$_x"; done
+    find "$_d" -type f \
+      ! -name '.DS_Store' ! -name '*.pyc' ! -name '*.log' ! -name '*.tmp' \
+      ! -name '.backup-needed' ! -path '*/__pycache__/*' "$@" 2>/dev/null | head -1 )
 }
 
 # git cannot represent empty directories, so a live empty dir is never in the
@@ -342,6 +384,10 @@ check() {  # check <live-path> <mirror-subpath> [extra diff excludes...]
     # mirror, and classified like any other.
     out=$(printf 'Only in %s: %s\n' "$(dirname "$live")" "$(basename "$live")" | filter_empty_dirs || true)
   elif [ -d "$live" ]; then
+    _ifs=$IFS; IFS='
+'; set -f
+    for _x in $R_DIFF_X; do set -- "$@" -x "$_x"; done
+    set +f; IFS=$_ifs
     out=$(diff -rq "$@" "$live" "$T/mirror/$sub" 2>&1 \
           | grep -v -E '\.DS_Store|__pycache__|\.pyc|\.log|\.tmp|\.backup-needed' \
           | filter_empty_dirs || true)
@@ -371,7 +417,12 @@ check "$HOME/.claude/projects/-Users-you/memory" "memory"
 # active memory: private-contact.md is EXCLUDED by design, so diff around it
 echo "memory-active" >> "$T/.checked"
 if [ -d "$HOME/.claude/projects/-Users-you-Claude/memory" ]; then
-  out=$(diff -rq "$HOME/.claude/projects/-Users-you-Claude/memory" "$T/mirror/memory-active" 2>&1 \
+  # Same R() excludes as check() (2026-10-26), so a zip or PDF in memory is not drift.
+  _ifs=$IFS; IFS='
+'; set -f; set --
+  for _x in $R_DIFF_X; do set -- "$@" -x "$_x"; done
+  set +f; IFS=$_ifs
+  out=$(diff -rq "$@" "$HOME/.claude/projects/-Users-you-Claude/memory" "$T/mirror/memory-active" 2>&1 \
         | grep -v 'private-contact.md' || true)
   if [ -n "$out" ]; then
     echo "drift: active memory"
@@ -414,7 +465,8 @@ done
 R() { _bk_R -n -i "$@"; }
 STAGE="$T/inv"; mkdir -p "$STAGE"
 : > "$T/.empty"
-TOT_PII=0; TOT_EMB=0; TOT_OVER=0; TOT_CMP=0; TOT_IGN=0
+: > "$T/.held.path"   # by-path holdbacks for the scope being checked; set per project
+TOT_PII=0; TOT_EMB=0; TOT_OVER=0; TOT_CMP=0; TOT_IGN=0; TOT_PATH=0
 
 cap() {  # print at most 15 detail lines per scope, then a count of the rest
   awk 'NR <= 15 { print } END { if (NR > 15) printf "    ... and %d more like these\n", NR - 15 }'
@@ -479,7 +531,7 @@ rules_scope() {
     ( cd "$rs_live" && grep -E '\.(html|md)$' "$T/.nc.files" | tr '\n' '\0' \
         | xargs -0 grep -lE -- "$EMB_RE" 2>/dev/null ) | LC_ALL=C sort -u > "$T/.held.emb" || true
   fi
-  LC_ALL=C sort -u "$T/.held.pii" "$T/.held.emb" > "$T/.held"
+  LC_ALL=C sort -u "$T/.held.pii" "$T/.held.emb" "$T/.held.path" > "$T/.held"
   LC_ALL=C comm -23 "$T/.nc.files" "$T/.in.files" | LC_ALL=C comm -23 - "$T/.held" > "$T/.over"
   LC_ALL=C sort -u "$T/.in.files" "$T/.in.links" | LC_ALL=C comm -23 - "$T/.held" > "$T/.expect"
   if [ -d "$T/mirror/$rs_sub" ]; then
@@ -525,16 +577,22 @@ rules_scope() {
     ( cd "$T/mirror/$rs_sub" && grep -E '\.(html|md)$' "$T/.clone" | tr '\n' '\0' \
         | xargs -0 grep -lE -- "$EMB_RE" 2>/dev/null ) >> "$T/.leak" || true
   fi
+  if [ -s "$T/.held.path" ] && [ -s "$T/.clone" ]; then
+    LC_ALL=C sort -u "$T/.held.path" | LC_ALL=C comm -12 - "$T/.clone" >> "$T/.leak"
+  fi
   LC_ALL=C sort -u -o "$T/.leak" "$T/.leak"
 
   n_exp=$(wc -l < "$T/.expect" | tr -d ' ');     TOT_CMP=$((TOT_CMP + n_exp))
   n_pii=$(wc -l < "$T/.held.pii" | tr -d ' ');   TOT_PII=$((TOT_PII + n_pii))
   n_emb=$(wc -l < "$T/.held.emb" | tr -d ' ');   TOT_EMB=$((TOT_EMB + n_emb))
   n_over=$(wc -l < "$T/.over" | tr -d ' ');      TOT_OVER=$((TOT_OVER + n_over))
+  n_path=$(LC_ALL=C sort -u "$T/.held.path" | LC_ALL=C comm -12 - "$T/.nc.files" | wc -l | tr -d ' ')
+  TOT_PATH=$((TOT_PATH + n_path))
   info="$n_exp file(s) compared"
   if [ "$n_pii" -gt 0 ]; then info="$info; $n_pii held back by the privacy filter"; fi
   if [ "$n_emb" -gt 0 ]; then info="$info; $n_emb embedded-media page(s) held back"; fi
   if [ "$n_over" -gt 0 ]; then info="$info; $n_over over the size cap"; fi
+  if [ "$n_path" -gt 0 ]; then info="$info; $n_path held back by path"; fi
   if [ "$n_ign" -gt 0 ]; then info="$info; $n_ign skipped by the project's own ignore list"; fi
   if [ -s "$T/.ign.real" ] || [ -s "$T/.liveonly.plain" ] || [ -s "$T/.differs" ] \
      || [ -s "$T/.mirroronly" ] || [ -s "$T/.leak" ]; then
@@ -589,7 +647,11 @@ if [ "$HAVE_PROJ" = 1 ]; then
   PROJ_DENY="$T/.empty"
   for p in $PROJ_ALLOW; do
     PROJ_LOCAL_DIR="$PLD_DEFAULT"; eval "$PLD_CASE"
-    rules_scope "$CMD_PROJ" "$PII_RE_PROJ" yes
+    for h in $PROJ_PATH_HOLD; do [ "${h%%/*}" = "$p" ] && printf '%s\n' "${h#*/}"; done > "$T/.held.path" || true
+    rs_proj_re="$PII_RE_PROJ"
+    [ -n "$PII_NARROW_PROJ" ] && [ "$p" = "$PII_NARROW_PROJ" ] && rs_proj_re="$PII_RE_NARROW"
+    rules_scope "$CMD_PROJ" "$rs_proj_re" yes
+    : > "$T/.held.path"
   done
   # A project folder still in the mirror after leaving the allow-list is refreshed by
   # nothing: backup.sh syncs each listed project on its own and never prunes the rest.
@@ -672,7 +734,7 @@ fi
 if [ "$TOT_CMP" -gt 0 ]; then
   echo "  Rule-checked scopes: $TOT_CMP file(s) compared against backup.sh's own copy rules."
 fi
-if [ $((TOT_PII + TOT_EMB + TOT_OVER + TOT_IGN)) -gt 0 ]; then
-  echo "  Kept out of the cloud copy on purpose: $TOT_PII file(s) held back by the privacy filter, $TOT_EMB embedded-media page(s), $TOT_OVER file(s) over the size cap, $TOT_IGN file(s) skipped by a project's own ignore list (ruling A, 2026-09-25). Those come back only from a local backup such as Time Machine, never from this mirror."
+if [ $((TOT_PII + TOT_EMB + TOT_OVER + TOT_IGN + TOT_PATH)) -gt 0 ]; then
+  echo "  Kept out of the cloud copy on purpose: $TOT_PII file(s) held back by the privacy filter, $TOT_PATH held back by path, $TOT_EMB embedded-media page(s), $TOT_OVER file(s) over the size cap, $TOT_IGN file(s) skipped by a project's own ignore list (ruling A, 2026-09-25). Those come back only from a local backup such as Time Machine, never from this mirror."
 fi
 exit $RC
