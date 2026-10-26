@@ -159,14 +159,16 @@ if [ "$HAVE_PROJ" = 1 ]; then
   bk_shape 1 '( cd "$PROJ_SRC/$p" && grep -rilE \' "the projects privacy holdback (case-insensitive, every file)"
   # Each project's pattern (added 2026-10-26): PII_RE_PROJ, except the one project that
   # PII_NARROW_PROJ names, which backup.sh reads with the narrower PII_RE_NARROW. Optional,
-  # so a backup.sh without it still runs here; when present, the line that applies it is
-  # pinned and the drill uses the same pattern for that project, or the files the narrower
-  # list releases would read as leaks.
-  bk_shape 1 '"$PROJ_PII_RE" \' "the projects privacy holdback reads the per-project pattern"
+  # so a backup.sh without it (rolled back, or the public edition) still runs here; when
+  # present, the lines that apply it are pinned and the drill uses the same pattern for that
+  # project, or the files the narrower list releases would read as leaks.
   if grep -q "^PII_RE_NARROW='" "$BACKUP_SH"; then
+    bk_shape 1 '"$PROJ_PII_RE" \' "the projects privacy holdback reads the per-project pattern"
     if bk_sq PII_RE_NARROW && canary_ok "$BK_VAL"; then PII_RE_NARROW="$BK_VAL"; else bk_problem "PII_RE_NARROW, or it fails backup.sh's own canary"; fi
     if bk_dq PII_NARROW_PROJ; then PII_NARROW_PROJ="$BK_VAL"; else bk_problem "PII_NARROW_PROJ, the one project read with PII_RE_NARROW"; fi
     bk_shape 1 '[ "$p" = "$PII_NARROW_PROJ" ] && PROJ_PII_RE="$PII_RE_NARROW"' "the narrower privacy pattern applies to that one project alone"
+  else
+    bk_shape 1 '"$PII_RE_PROJ" \' "the projects privacy holdback reads PII_RE_PROJ"
   fi
   # Single files held back by path (added 2026-10-26): optional, one line, and applied
   # by one loop. Without this the drill expected them, and passed only while a
