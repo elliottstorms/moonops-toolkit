@@ -11,23 +11,130 @@ if [ -f "$T" ]; then
   sed -n '1,18p' "$T"
 fi
 
-# Daily brief (com.moonops.dailysync, 07:20). The brief is written to a local file
-# rather than emailed, so something has to surface it or it may as well not exist.
-# Fresh brief: show the alert lines and Today's one thing. Stale brief: say so,
-# because a missing morning sync is itself the alert; that is the exact failure
-# class (a launchd job dying quietly) the sync was built to catch, and nothing
-# else watches the watcher.
-BRIEF="$HOME/Claude/DailyBrief.md"
-if [ -f "$BRIEF" ]; then
-  if [ -n "$(find "$BRIEF" -mtime -1 2>/dev/null)" ]; then
-    echo
-    echo "== 🌙 Daily brief ($(date -r "$BRIEF" '+%a %-I:%M %p')), ~/Claude/DailyBrief.html =="
-    grep -E '^> ⚠️|^\*\*Top priority' "$BRIEF" 2>/dev/null | head -4
-    awk '/^## 👉/{getline; print "👉 " $0; exit}' "$BRIEF" 2>/dev/null
-  elif [ -z "$(find "$BRIEF" -mtime -2 2>/dev/null)" ]; then
-    echo
-    echo "== ⚠️ daily-sync: brief is $(( ( $(date +%s) - $(date -r "$BRIEF" +%s) ) / 86400 ))d stale, the 07:20 sync may be dead; check ~/Claude/daily-sync/logs/run.log =="
+# Live alerts. Until 2026-10-28 this spot echoed the alert lines of the 07:20 daily
+# brief; that sync was retired with the dashboard and the other pushed status pages,
+# because the pages went unread and a daily model run to produce a few alert lines
+# cost more than it caught. The two checks behind those alerts are cheap enough to
+# run right here, fresh at every session start, with no scheduled job that can
+# itself die quietly (the old "nothing watches the watcher" problem goes away):
+#   1. a scheduled job (com.moonops.* or com.yourname.*) whose last exit was a positive
+#      code and that is not running now. Negative codes are signals, such as the -15 a
+#      KeepAlive job reports after a restart, and are normal, so they are skipped.
+#   2. any job-failure line STATUS.md recorded in the last 24 hours.
+#   3. the open asks on the MoonOps morning card (moonops-rain/out/card_asks.md, which the
+#      07:00 run rewrites): a stream recording left public, or nothing scheduled to air.
+#      The 07:20 sync was that file's only reader, so retiring it left these alarms
+#      reaching nobody, the same silence that hid an empty premiere runway for eight days
+#      in October 2026. A card the 07:00 run has not rewritten in 30 hours says so, so a
+#      run that never happened cannot pass for a clean card.
+#   4. the asks other routines park in files for her (the gitscore loop's proposals, the
+#      MoonOps council's OPEN_ASKS.md, the Belief and Company weekly council's unanswered
+#      decisions), read through ~/.claude/skills/daily-sync/collect_asks.py. Her rule is that an
+#      ask reaches her in chat, never parked in a file, and the 07:20 sync was these files' only
+#      reader too. The collector's card, self-heal and CLAUDE.md sources are skipped because
+#      this file already prints them, and a collector that fails says so instead of going quiet.
+#   5. customer email to the Belief and Company support inbox that has no reply yet, from
+#      ~/.local/state/gmail-mirror/support.json, which the Gmail mirror's support alarm
+#      (~/Claude/Toolkit/gmail-mirror/support_alarm.py) rewrites every 15 minutes, 7 AM to 11 PM.
+#      It replaced the daily support-desk model run on 2026-10-29, so this line is now the
+#      only standing reminder that a parent is waiting. The trigger for "unknown" is the age
+#      of the last good check, not one failed run, so a network blip stays quiet and a dead
+#      alarm cannot pass for an empty inbox.
+#   6. the venture queue's morning release (her 2026-09-14 rule: tasks released every morning,
+#      get ahead freely), one line from ~/.claude/skills/daily-sync/today.py --line, her pick
+#      2A of 2026-10-29. The retired 07:20 sync had been the queue's only reader. "My tasks",
+#      "todo list" and "fresh stats" print the full list from the same script.
+# Quiet when all six are clean, so a printed line always means something.
+ST="$HOME/Claude/STATUS.md"
+CARD="$HOME/Claude/Projects/moonops/moonops-rain/out/card_asks.md"
+alerts=$(
+  launchctl list 2>/dev/null | awk -F'\t' '$3 ~ /^com\.(moonops|yourname)\./ && $1 == "-" && $2+0 > 0 {print "launchd: " $3 " last exited " $2 " and is not running"}'
+  if [ -f "$ST" ]; then
+    cutoff=$(date -v-24H '+%Y-%m-%d %H:%M' 2>/dev/null)
+    [ -n "$cutoff" ] && tail -n 400 "$ST" 2>/dev/null \
+      | awk -F' [|] ' -v c="$cutoff" '$3 == "job-failure" && $1 >= c {print "job-failure " $1 ": " substr($4, 1, 220)}' | tail -n 4
   fi
+  if [ -f "$CARD" ]; then
+    asof=$(sed -n '1s/.*as of \([0-9-]*\).*/\1/p' "$CARD")
+    awk -v d="$asof" '/^## / {sub(/^## /, ""); print "MoonOps card " d ": " substr($0, 1, 220)}' "$CARD" | head -n 4
+    age=$(( ( $(date +%s) - $(stat -f %m "$CARD" 2>/dev/null || date +%s) ) / 3600 ))
+    [ "$age" -ge 30 ] && echo "MoonOps card: not rewritten for $age hours, so the 07:00 run has not been checking and the lines above may be stale"
+  fi
+  python3 -B "$HOME/.claude/skills/daily-sync/collect_asks.py" --json 2>/dev/null | python3 -c '
+import json, sys
+skip = {"moonops-card", "self-heal", "claude-md"}
+try:
+    d = json.load(sys.stdin)
+except Exception:
+    print("Waiting on you: the ask collector (collect_asks.py) failed, so parked asks are unknown, not zero")
+    sys.exit(0)
+asks = [a for a in d.get("open", []) if a.get("source") not in skip]
+for a in asks[:5]:
+    print("Waiting on you: " + a.get("line", "")[:220])
+if len(asks) > 5:
+    print("Waiting on you: %d more; collect_asks.py lists them all" % (len(asks) - 5))
+for s in d.get("sources", []):
+    why = s.get("error") or s.get("warning")
+    if why and s.get("key") not in skip:
+        print("Waiting on you: %s is unknown today, not zero (%s)" % (s.get("label"), why[:150]))
+' 2>/dev/null
+  python3 - "$HOME/.local/state/gmail-mirror/support.json" <<'PYSUP' 2>/dev/null
+import json, re, subprocess, sys, time
+from datetime import datetime
+try:
+    d = json.load(open(sys.argv[1]))
+except FileNotFoundError:
+    print("Support inbox unknown: the customer-mail alarm has no record yet, so a new email to hello@ would not be flagged")
+    sys.exit(0)
+except Exception:
+    print("Support inbox unknown: the customer-mail alarm's record is unreadable, so a new email to hello@ would not be flagged")
+    sys.exit(0)
+def epoch(s):
+    try:
+        return datetime.fromisoformat(s).timestamp()
+    except Exception:
+        return 0
+now = time.time()
+last = epoch(d.get("checked_at") or "")
+# The alarm runs every 15 minutes from 7 AM to 11 PM, and a sleeping Mac runs nothing. In the
+# day, once the Mac has been up half an hour, 90 minutes is several missed runs; otherwise
+# allow the overnight gap.
+up = 0
+try:
+    out = subprocess.run(["sysctl", "-n", "kern.waketime", "kern.boottime"], capture_output=True, text=True, timeout=2).stdout
+    up = max([int(x) for x in re.findall(r"sec = (\d+)", out)] or [0])
+except Exception:
+    pass
+t = datetime.now()
+limit = 90 * 60 if (7.5 <= t.hour + t.minute / 60 <= 23.5 and now - up >= 1800) else 12 * 3600
+if now - last > limit:
+    why = d.get("error") or (d.get("mirror_status") if d.get("mirror_status") not in (None, "ARMED") else "")
+    age = "never checked" if not last else "last good check %.0f hours ago" % ((now - last) / 3600)
+    print("Support inbox unknown: %s%s, so a new email to hello@ would not be flagged yet"
+          % (age, " (%s)" % why[:120] if why else ""))
+def waited(s):
+    h = (now - epoch(s)) / 3600
+    return "%d minutes" % (h * 60) if h < 1 else ("%d hours" % h if h < 48 else "%d days" % (h / 24))
+waiting = d.get("open") or []
+for o in waiting[:5]:
+    notes = []
+    if o.get("folder"):
+        notes.append("Gmail put it in " + o["folder"])
+    if o.get("draft_waiting"):
+        notes.append("a reply is drafted in Gmail, not sent")
+    print('Belief and Company mail waiting %s for a reply: %s, "%s"%s. Say "check support" for a reply, or "no reply needed" to clear it'
+          % (waited(o.get("since", "")), o.get("from", "?")[:60], o.get("subject", "")[:80],
+             " (%s)" % "; ".join(notes) if notes else ""))
+if len(waiting) > 5:
+    print("Belief and Company mail waiting: %d more; support_alarm.py --status lists them all" % (len(waiting) - 5))
+PYSUP
+  python3 -B "$HOME/.claude/skills/daily-sync/today.py" --line 2>/dev/null \
+    || echo "Venture queue unknown: today.py failed, so today's venture tasks are unknown, not zero"
+)
+if [ -n "$alerts" ]; then
+  echo
+  echo "== ⚠️ Alerts, computed live at session start (mention once, at the end of the first reply) =="
+  echo "$alerts"
 fi
 
 # CLAUDE.md edits cannot be applied by the headless 07:20 sync (harness-level

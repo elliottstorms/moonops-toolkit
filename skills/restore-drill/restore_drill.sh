@@ -406,7 +406,10 @@ check() {  # check <live-path> <mirror-subpath> [extra diff excludes...]
 
 check "$HOME/Claude/TASKS.md"                 "workspace/TASKS.md"
 check "$HOME/Claude/README.md"                "workspace/README.md"
-check "$HOME/Claude/Toolkit"                  "toolkit"
+# The Gmail mirror's DIGEST.md and state.json are held back from the mirror since
+# 2026-10-29 (backup.sh's Toolkit copy, anchored there); they are the only files by those
+# names under Toolkit, so skipping the names here skips exactly them.
+check "$HOME/Claude/Toolkit"                  "toolkit" -x DIGEST.md -x state.json
 check "$HOME/Claude/Scheduled"                "scheduled"
 check "$HOME/.claude/CLAUDE.md"               "claude-config/CLAUDE.md"
 check "$HOME/.claude/settings.json"           "claude-config/settings.json"

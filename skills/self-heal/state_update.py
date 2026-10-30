@@ -95,7 +95,7 @@ def count_open_proposals(path=PENDING):
 
     None, never 0, on a missing or unreadable file: a vanished pending-review.md
     and a genuinely empty one produce the same clean zero, and writing that zero
-    would silently clear the banner you reads. The caller leaves the previous
+    would silently clear the banner you read. The caller leaves the previous
     value alone and says so.
     """
     try:

@@ -210,6 +210,21 @@ the embedded tag together, remux with a stream copy so the audio stays bit ident
 corrected name to whatever export map the build uses, or the next rebuild silently restores the
 old one. Archive the prior name, tags and checksums before touching anything.
 
+**Periodic modulation (procedural audio).** Added 2026-09-28 by the design lead's rulings on the pack
+pulses. Depth is read in every octave a listener can hear (within 35 dB of the loudest A-weighted
+octave) and compared with the shallowest depth the Owner has heard and rejected: m 0.052 at 4.5 Hz
+(Soft White, 2026-09-28). A steady pulse is a rise and fall at one fixed rate of 0.4 Hz or faster.
+A slower fixed swell is breathing, not a pulse, while it stays under 2 dB peak to trough in every
+such octave; a deeper one is judged as a pulse. A pulse that no name or copy promises ships if it
+reads at least 6 dB under the Owner's depth (m 0.026 or less) in every such octave, or if it is the
+named sound's own grain (a beat of the sound's own tones at 20 Hz or faster). It is removed if it
+reads at least 3 dB over her depth (m 0.074 or more) in an octave that carries the named sound.
+Anything between goes to the Owner's ear on that file, and her call is final. A movement the copy
+promises is declared continuous-with-required-modulation and must be present. A 3 to 5 Hz tremolo
+on a noise bed is never a texture choice, at any depth. Record:
+`moonops-rain/council/RULING_2026-09-28f_design-lead_pack-pulses-listen.md` and
+`moonops-rain/council/RULING_2026-09-28g_design-lead_octave-sweep.md`.
+
 ## Using this system in a new project
 
 1. Copy `tokens.css` (or its `:root` block) in verbatim.
