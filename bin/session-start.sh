@@ -33,13 +33,19 @@ fi
 #      ask reaches her in chat, never parked in a file, and the 07:20 sync was these files' only
 #      reader too. The collector's card, self-heal and CLAUDE.md sources are skipped because
 #      this file already prints them, and a collector that fails says so instead of going quiet.
+#      Its support-inbox rows are left out too, because item 5 sums them into one line, but
+#      that source's unknown-not-zero warning prints here.
 #   5. customer email to the Belief and Company support inbox that has no reply yet, from
 #      ~/.local/state/gmail-mirror/support.json, which the Gmail mirror's support alarm
 #      (~/Claude/Toolkit/gmail-mirror/support_alarm.py) rewrites every 15 minutes, 7 AM to 11 PM.
-#      It replaced the daily support-desk model run on 2026-10-29, so this line is now the
-#      only standing reminder that a parent is waiting. The trigger for "unknown" is the age
-#      of the last good check, not one failed run, so a network blip stays quiet and a dead
-#      alarm cannot pass for an empty inbox.
+#      It replaced the daily support-desk model run on 2026-10-29. Since 2026-11-01 this is
+#      one count line (how many, the oldest's wait, the Spam and unsent-draft notes) and never
+#      a sender or a subject: anyone can write to hello@, so those are outside text, and this
+#      line reaches every session, unattended ones included. support_alarm.py --status shows
+#      them when she says "check support". The same emails are rows in collect_asks.py (item
+#      4), the portable reader behind "my tasks" and the weekly review, and the stale-alarm
+#      rule lives there: "unknown" is triggered by the age of the last good check, not one
+#      failed run, so a network blip stays quiet and a dead alarm cannot pass for an empty inbox.
 #   6. the venture queue's morning release (her 2026-09-14 rule: tasks released every morning,
 #      get ahead freely), one line from ~/.claude/skills/daily-sync/today.py --line, her pick
 #      2A of 2026-10-29. The retired 07:20 sync had been the queue's only reader. "My tasks",
@@ -68,7 +74,8 @@ try:
 except Exception:
     print("Waiting on you: the ask collector (collect_asks.py) failed, so parked asks are unknown, not zero")
     sys.exit(0)
-asks = [a for a in d.get("open", []) if a.get("source") not in skip]
+# Support rows are summed into the one count line below; the support warning still prints here.
+asks = [a for a in d.get("open", []) if a.get("source") not in skip and a.get("source") != "bnc-support"]
 for a in asks[:5]:
     print("Waiting on you: " + a.get("line", "")[:220])
 if len(asks) > 5:
@@ -79,15 +86,15 @@ for s in d.get("sources", []):
         print("Waiting on you: %s is unknown today, not zero (%s)" % (s.get("label"), why[:150]))
 ' 2>/dev/null
   python3 - "$HOME/.local/state/gmail-mirror/support.json" <<'PYSUP' 2>/dev/null
-import json, re, subprocess, sys, time
+# One count line, never a sender or a subject (item 5 above says why). A missing, unreadable
+# or stale record is reported as unknown by collect_asks.py, above, so this stays quiet then.
+import json, sys, time
 from datetime import datetime
 try:
-    d = json.load(open(sys.argv[1]))
-except FileNotFoundError:
-    print("Support inbox unknown: the customer-mail alarm has no record yet, so a new email to hello@ would not be flagged")
-    sys.exit(0)
+    waiting = [o for o in (json.load(open(sys.argv[1])).get("open") or []) if isinstance(o, dict)]
 except Exception:
-    print("Support inbox unknown: the customer-mail alarm's record is unreadable, so a new email to hello@ would not be flagged")
+    sys.exit(0)
+if not waiting:
     sys.exit(0)
 def epoch(s):
     try:
@@ -95,38 +102,25 @@ def epoch(s):
     except Exception:
         return 0
 now = time.time()
-last = epoch(d.get("checked_at") or "")
-# The alarm runs every 15 minutes from 7 AM to 11 PM, and a sleeping Mac runs nothing. In the
-# day, once the Mac has been up half an hour, 90 minutes is several missed runs; otherwise
-# allow the overnight gap.
-up = 0
-try:
-    out = subprocess.run(["sysctl", "-n", "kern.waketime", "kern.boottime"], capture_output=True, text=True, timeout=2).stdout
-    up = max([int(x) for x in re.findall(r"sec = (\d+)", out)] or [0])
-except Exception:
-    pass
-t = datetime.now()
-limit = 90 * 60 if (7.5 <= t.hour + t.minute / 60 <= 23.5 and now - up >= 1800) else 12 * 3600
-if now - last > limit:
-    why = d.get("error") or (d.get("mirror_status") if d.get("mirror_status") not in (None, "ARMED") else "")
-    age = "never checked" if not last else "last good check %.0f hours ago" % ((now - last) / 3600)
-    print("Support inbox unknown: %s%s, so a new email to hello@ would not be flagged yet"
-          % (age, " (%s)" % why[:120] if why else ""))
-def waited(s):
-    h = (now - epoch(s)) / 3600
+ages = [max(0, now - e) for e in (epoch(o.get("since")) for o in waiting) if e]
+def waited(sec):
+    h = sec / 3600
     return "%d minutes" % (h * 60) if h < 1 else ("%d hours" % h if h < 48 else "%d days" % (h / 24))
-waiting = d.get("open") or []
-for o in waiting[:5]:
-    notes = []
-    if o.get("folder"):
-        notes.append("Gmail put it in " + o["folder"])
-    if o.get("draft_waiting"):
-        notes.append("a reply is drafted in Gmail, not sent")
-    print('Belief and Company mail waiting %s for a reply: %s, "%s"%s. Say "check support" for a reply, or "no reply needed" to clear it'
-          % (waited(o.get("since", "")), o.get("from", "?")[:60], o.get("subject", "")[:80],
-             " (%s)" % "; ".join(notes) if notes else ""))
-if len(waiting) > 5:
-    print("Belief and Company mail waiting: %d more; support_alarm.py --status lists them all" % (len(waiting) - 5))
+n = len(waiting)
+head = "%d email%s" % (n, "" if n == 1 else "s")
+if ages:
+    head += (", waiting " if n == 1 else ", the oldest waiting ") + waited(max(ages))
+notes = []
+for folder in ("Spam", "Trash"):
+    k = sum(1 for o in waiting if o.get("folder") == folder)
+    if k:
+        notes.append("Gmail put %s in %s" % ("it" if n == 1 else k, folder))
+k = sum(1 for o in waiting if o.get("draft_waiting"))
+if k:
+    notes.append("a reply is drafted in Gmail, not sent" if n == 1
+                 else "%d %s a reply drafted in Gmail, not sent" % (k, "has" if k == 1 else "have"))
+print('Belief and Company mail waiting for a reply: %s%s. Say "check support" for a reply, or "no reply needed" to clear it'
+      % (head, " (%s)" % "; ".join(notes) if notes else ""))
 PYSUP
   python3 -B "$HOME/.claude/skills/daily-sync/today.py" --line 2>/dev/null \
     || echo "Venture queue unknown: today.py failed, so today's venture tasks are unknown, not zero"

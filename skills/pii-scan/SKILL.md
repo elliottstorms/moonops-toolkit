@@ -24,7 +24,10 @@ python3 ~/.claude/skills/pii-scan/pii_scan.py --mode redact file.md > file.publi
 ```
 
 - Exit `0` = clean, `2` = findings at or above the `--fail-on` threshold
-  (default `medium`), `3` = usage or config error.
+  (default `medium`), `3` = usage or config error, or a path that was not
+  scanned (missing, binary, over `max_bytes`, unreadable). Each unscanned path
+  is named on stderr, and findings still exit `2`. Treat `3` as a block, never
+  as a pass.
 - `--stdin` scans a stream, `--json` emits machine-readable findings,
   `--show` prints raw values instead of masked excerpts (use sparingly),
   `--write` (redact mode) writes `<file>.redacted` siblings.
@@ -39,7 +42,10 @@ low enough that people actually leave the gate turned on.
 
 ## Config: `.pii-scan.json`
 
-Looked up in the working directory, or passed with `--config`. See
+A path scan reads a config only when you pass one with `--config <path>`. It
+never picks up a `.pii-scan.json` on its own, because a file inside the tree
+being scanned could otherwise configure its own gate. A `--stdin` scan (the
+hooks) also reads `./.pii-scan.json` from the working directory. See
 `pii-scan.example.json` next to this file.
 
 - `allowlist`: exact strings that are known-safe. Entries can be plain strings
@@ -48,9 +54,15 @@ Looked up in the working directory, or passed with `--config`. See
 - `allowlist_patterns`: regexes for known-safe families (e.g. your own
   published contact email).
 - `custom_patterns`: institution-specific formats (member-number layouts,
-  internal ticket IDs) with a name and confidence.
+  internal ticket IDs) with a name and confidence. Every pattern, these
+  included, reads a curly apostrophe (U+2018, U+2019 or U+02BC) as a straight
+  one, so spell an apostrophe in a pattern as `'`.
 - `fail_on`: default threshold (`low` | `medium` | `high`).
-- `exclude_paths`: regex fragments for paths to skip.
+- `exclude_paths`: regex fragments for paths to skip on purpose. An excluded
+  path is not reported, so this is also where you acknowledge, by name, a file
+  the scanner cannot read (an image, say) instead of letting it exit `3`.
+- `max_bytes`: the largest file the scanner reads (default 2 MiB). A bigger
+  file is named as not scanned.
 
 ## Honest limits
 

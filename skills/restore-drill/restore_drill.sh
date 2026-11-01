@@ -211,6 +211,17 @@ while IFS='|' read -r s d; do
     printf '%s|%s\n' "$(printf '%s' "$s" | sed "s/\\\$$v/$item/")" "$(printf '%s' "$d" | sed "s/\\\$$v/$item/")" >> "$T/.cpfiles"
   done
 done < "$T/.cps"
+# STATUS.md is copied through a filter since 2026-11-01 (STATUS_REDACT): the Gmail mirror's
+# inbox notes reach the cloud copy with their sender, subject, thread and overflow count held
+# back. That copy is not a plain cp, so the list above no longer holds it; the drill reads the
+# filter and compares through it below. An edition of backup.sh without the filter (the public
+# one) copies STATUS.md plainly, and the list above checks it as before.
+STATUS_REDACT=""
+if grep -q '^STATUS_REDACT=' "$BACKUP_SH"; then
+  if bk_sq STATUS_REDACT && printf 'x\n' | LC_ALL=C sed -E "$BK_VAL" > /dev/null 2>&1; then STATUS_REDACT="$BK_VAL"
+  else bk_problem "STATUS_REDACT, the filter the STATUS.md copy runs through (missing, or not a working sed -E program)"; fi
+  bk_shape 1 'LC_ALL=C sed -E "$STATUS_REDACT" "$HOME/Claude/STATUS.md" > "$STAGE/workspace/STATUS.md"' "the STATUS.md copy runs through STATUS_REDACT"
+fi
 
 # The staging repo path, for the four root files the mirror holds but backup.sh never copies
 # (.github .gitignore .gitleaks.toml .gitleaksignore, compared further down). One STAGE="..."
@@ -433,6 +444,36 @@ if [ -d "$HOME/.claude/projects/-Users-you-Claude/memory" ]; then
     echo "drift: active memory"
     classify_out "$HOME/.claude/projects/-Users-you-Claude/memory" "memory-active" "$out"
   else echo "match: memory-active (PII exclusion intact)"; fi
+fi
+
+# STATUS.md through backup.sh's own filter (2026-11-01). The live file, filtered, must equal the
+# cloud copy, so the held-back notes never read as drift; and the cloud copy must already be
+# filtered (filtering it again changes nothing), so a note that reached GitHub reads as a leak.
+if [ -n "$STATUS_REDACT" ]; then
+  st_live="$HOME/Claude/STATUS.md"; st_sub="workspace/STATUS.md"
+  echo "$st_sub" >> "$T/.checked"
+  if [ ! -e "$st_live" ]; then
+    echo "skip (no live source): $st_live"
+  elif [ ! -e "$T/mirror/$st_sub" ]; then
+    echo "drift: $st_live <-> mirror/$st_sub"
+    classify_out "$st_live" "$st_sub" "Only in $(dirname "$st_live"): $(basename "$st_live")"
+  else
+    LC_ALL=C sed -E "$STATUS_REDACT" "$st_live" > "$T/.status.live"
+    LC_ALL=C sed -E "$STATUS_REDACT" "$T/mirror/$st_sub" > "$T/.status.cloud"
+    st_leak=$(diff "$T/.status.cloud" "$T/mirror/$st_sub" | grep -c '^>' || true)
+    if [ "${st_leak:-0}" != 0 ] || ! cmp -s "$T/.status.live" "$T/mirror/$st_sub"; then
+      echo "drift: $st_live <-> mirror/$st_sub (compared through the STATUS.md filter)"
+      if [ "${st_leak:-0}" != 0 ]; then
+        printf '    [REAL: this copy ON GITHUB holds %s Gmail mirror note(s) the STATUS.md filter keeps off it] %s\n' "$st_leak" "$st_sub"
+        echo "RP" >> "$T/.tally"
+      fi
+      if ! cmp -s "$T/.status.live" "$T/mirror/$st_sub"; then
+        classify_out "$st_live" "$st_sub" "Files $st_live and $T/mirror/$st_sub differ"
+      fi
+    else
+      echo "match: $st_sub (compared through the STATUS.md filter, Gmail mirror inbox notes held back)"
+    fi
+  fi
 fi
 
 # ---- every other single file backup.sh copies with cp (added 2026-09-23) ----

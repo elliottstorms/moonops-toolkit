@@ -53,9 +53,15 @@ lives and files a dated JSON report:
 
 ```bash
 # crontab: every Monday 08:00
-0 8 * * 1 python3 $HOME/.claude/skills/pii-scan/pii_scan.py --json \
+0 8 * * 1 python3 $HOME/.claude/skills/pii-scan/pii_scan.py --json --config $HOME/.pii-scan.json \
   $HOME/work > $HOME/logs/pii-sweep-$(date +\%F).json 2>> $HOME/logs/pii-sweep.err
 ```
+
+A path scan reads a config only through `--config`, so name yours there (drop
+that flag if you keep none). Exit `3` means some paths were not scanned: the
+report lists them under `unscanned`, and a sweep with that list is not a clean
+sweep. Acknowledge a file the scanner cannot read, such as an image, by name in
+`exclude_paths`.
 
 Add one row per sweep to the evidence log (`templates/pii-evidence-log.md`).
 The sweep is what turns "we have a policy" into "here is the dated proof it

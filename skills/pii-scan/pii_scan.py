@@ -13,6 +13,9 @@ Modes:
 
 Exit codes: 0 clean, 2 findings at/above threshold, 3 usage/config error.
 (Same contract as site_audit.py: scripts decide, models obey.)
+In report and gate modes a path that could not be scanned (missing, binary,
+over max_bytes, unreadable) also exits 3 and is named on stderr: the scanner
+never reports clean for a file it did not read. Findings still exit 2.
 
 What this cannot catch: unlabeled names, narrative PII in prose, faces,
 audio. That is what the pii-auditor and redaction-verifier agents are for.
@@ -26,7 +29,10 @@ import sys
 
 CONF_ORDER = {"low": 1, "medium": 2, "high": 3}
 DEFAULT_MAX_BYTES = 2 * 1024 * 1024
-SKIP_DIRS = {".git", "node_modules", ".venv", "venv", "__pycache__", ".next", "dist"}
+# Tool-owned folders only. "dist" is not here: built output is often what gets
+# published (a committed dist/index.js), so it is scanned like any other folder.
+SKIP_DIRS = {".git", "node_modules", ".venv", "venv", "__pycache__", ".next"}
+MODES = ("report", "gate", "redact")
 KEYWORD_WINDOW = 48
 
 # ---------------------------------------------------------------- validators
@@ -146,7 +152,13 @@ CREDENTIAL_PATTERNS = [
     ("github-token", r"gh[pousr]_" + r"[A-Za-z0-9]{20,}"),
     ("slack-token", r"xox[baprs]-" + r"[A-Za-z0-9\-]{10,}"),
     ("anthropic-key", r"sk-ant-" + r"[A-Za-z0-9\-]{20,}"),
-    ("private-key", "-----BEGIN " + r"[A-Z ]*" + "PRIVATE KEY-----"),
+    # The whole block, not just its header: redact mode replaces the span, and
+    # a header swapped for a tag left every key line readable. The span runs to
+    # the matching END line within 16 KiB, or with no END line over the base64
+    # lines that follow (a literal \n escape, as in a JSON-quoted key, counts).
+    ("private-key", "-----BEGIN " + r"([A-Z ]*)" + "PRIVATE KEY-----"
+     + r"(?:[\s\S]{0,16384}?" + "-----END " + r"\1" + "PRIVATE KEY-----"
+     + r"|(?:(?:\r?\n|\\n)[A-Za-z0-9+/=]{1,128})*)"),
     ("password-assignment", r"(?i)\bpassword\s*[:=]\s*\S{6,}"),
 ]
 for _name, _pat in CREDENTIAL_PATTERNS:
@@ -227,17 +239,28 @@ def mask(kind, s):
 
 # ----------------------------------------------------------------- scanning
 
+# Typographic apostrophes, read as the ASCII one the patterns are spelled with
+# (2026-11-01): a driver's license, typed with U+2019 as word processors
+# and phone keyboards write it, missed the id-document pattern; U+2018 and
+# U+02BC stand in for it too. Every pattern reads this copy, a config's
+# custom_patterns included, so spell an apostrophe in one as the ASCII one. It
+# is one character for one, so offsets, lines and columns stay those of the
+# original text, which the excerpts, the allowlist and redact mode read.
+APOSTROPHES = str.maketrans({"\u2018": "'", "\u2019": "'", "\u02bc": "'"})
+
+
 def scan_text(text, detectors, allow, allow_rx):
+    view = text.translate(APOSTROPHES)
     raw = []
     for kind, conf, prio, rx, check in detectors:
-        for m in rx.finditer(text):
-            val = m.group(0)
+        for m in rx.finditer(view):
+            val = text[m.start():m.end()]
             if val in allow:
                 continue
             if any(a.search(val) for a in allow_rx):
                 continue
             try:
-                if not check(m, text):
+                if not check(m, view):
                     continue
             except (ValueError, IndexError):
                 continue
@@ -261,48 +284,75 @@ def line_col(text, offset):
     return line, col
 
 
-def iter_files(paths, cfg, cfg_path):
-    skipped_big = []
+BOMS = ((b"\xff\xfe\x00\x00", "utf-32"), (b"\x00\x00\xfe\xff", "utf-32"),
+        (b"\xff\xfe", "utf-16"), (b"\xfe\xff", "utf-16"))
+
+
+def decode(head, data):
+    """Text for a file's bytes, or None when it is binary (a NUL and no BOM)."""
+    for bom, codec in BOMS:
+        if head.startswith(bom):
+            return data.decode(codec, errors="replace")
+    if b"\0" in head:
+        return None
+    return data.decode("utf-8", errors="replace")
+
+
+def iter_files(paths, cfg, cfg_path, unscanned, skip_redacted=False):
+    """Yield (path, text) for every file under paths. Each path it cannot read
+    goes into unscanned as (path, reason), so a caller never takes a file it
+    did not read for a clean one. Config exclusions are deliberate and silent;
+    *.redacted outputs are skipped only in redact mode."""
     for root_path in paths:
         if os.path.isfile(root_path):
             candidates = [root_path]
-        else:
+        elif os.path.isdir(root_path):
             candidates = []
-            for dirpath, dirnames, filenames in os.walk(root_path):
+            for dirpath, dirnames, filenames in os.walk(
+                    root_path, onerror=lambda e: unscanned.append(
+                        (e.filename or root_path, "unreadable folder"))):
                 dirnames[:] = [d for d in dirnames if d not in SKIP_DIRS]
                 candidates.extend(os.path.join(dirpath, f) for f in sorted(filenames))
+        else:
+            unscanned.append((root_path, "no such file or folder"
+                              if not os.path.lexists(root_path) else "not a file or folder"))
+            continue
         for p in candidates:
             ap = os.path.abspath(p)
             if cfg_path and ap == cfg_path:
                 continue
-            if p.endswith(".redacted"):
+            if skip_redacted and p.endswith(".redacted"):
                 continue
             if any(re.search(g, p) for g in cfg.get("exclude_paths", [])):
+                continue
+            if not os.path.isfile(p):
+                unscanned.append((p, "not a regular file"))
                 continue
             try:
                 size = os.path.getsize(p)
                 if size > cfg.get("max_bytes", DEFAULT_MAX_BYTES):
-                    skipped_big.append(p)
+                    unscanned.append((p, "over max_bytes (%d bytes)" % size))
                     continue
                 with open(p, "rb") as fh:
                     head = fh.read(8192)
-                    if b"\0" in head:
-                        continue
                     data = head + fh.read()
-            except OSError:
+            except OSError as e:
+                unscanned.append((p, "unreadable (%s)" % (e.strerror or e)))
                 continue
-            yield p, data.decode("utf-8", errors="replace")
-    if skipped_big:
-        print("pii_scan: skipped %d file(s) over max_bytes (not scanned): %s"
-              % (len(skipped_big), ", ".join(skipped_big)), file=sys.stderr)
+            text = decode(head, data)
+            if text is None:
+                unscanned.append((p, "binary"))
+                continue
+            yield p, text
 
 # --------------------------------------------------------------------- main
 
 def main(argv=None):
     ap = argparse.ArgumentParser(
-        description="Deterministic PII scanner. Exit 0 clean, 2 findings, 3 usage error.")
+        description="Deterministic PII scanner. Exit 0 clean, 2 findings, "
+                    "3 usage error or a path not scanned.")
     ap.add_argument("paths", nargs="*", help="files or directories to scan")
-    ap.add_argument("--mode", choices=("report", "gate", "redact"), default="report")
+    ap.add_argument("--mode", choices=MODES, default=None, help="default: report")
     ap.add_argument("--stdin", action="store_true", help="read stdin instead of paths")
     ap.add_argument("--config", default=None, help="path to .pii-scan.json")
     ap.add_argument("--fail-on", choices=("low", "medium", "high"), default=None,
@@ -313,10 +363,24 @@ def main(argv=None):
     ap.add_argument("--write", action="store_true",
                     help="redact mode: write <file>.redacted next to each input")
     args = ap.parse_args(argv)
+    # "pii_scan.py gate <path>" (a mode word with no --mode) means that mode.
+    # A missing path now exits 3, so the word must not be read as a path.
+    if (args.mode is None and args.paths and args.paths[0] in MODES
+            and not os.path.lexists(args.paths[0])):
+        args.mode = args.paths.pop(0)
+    args.mode = args.mode or "report"
 
+    # A path scan never picks up ./.pii-scan.json on its own: run from inside
+    # the tree it scans, that tree would configure its own gate. --stdin (the
+    # hooks) has no tree under scan and still reads it.
     explicit = args.config is not None
-    cfg_file = args.config if explicit else (
-        ".pii-scan.json" if os.path.exists(".pii-scan.json") else None)
+    cfg_file = args.config
+    if not explicit and os.path.exists(".pii-scan.json"):
+        if args.stdin:
+            cfg_file = ".pii-scan.json"
+        else:
+            print("pii_scan: not using ./.pii-scan.json for a path scan; "
+                  "pass --config ./.pii-scan.json to use it", file=sys.stderr)
     cfg, cfg_path = load_config(cfg_file, explicit)
     fail_on = args.fail_on or cfg.get("fail_on", "medium")
     if fail_on not in CONF_ORDER:
@@ -332,13 +396,20 @@ def main(argv=None):
         print("pii_scan: bad allowlist_pattern: %s" % e, file=sys.stderr)
         sys.exit(3)
 
+    unscanned = []
     if args.stdin:
         sources = [("<stdin>", sys.stdin.read())]
     elif args.paths:
-        sources = list(iter_files(args.paths, cfg, cfg_path))
+        sources = list(iter_files(args.paths, cfg, cfg_path, unscanned,
+                                  skip_redacted=args.mode == "redact"))
     else:
         ap.print_help()
         sys.exit(3)
+    if unscanned:
+        print("pii_scan: NOT SCANNED, %d path(s); the result does not cover them:"
+              % len(unscanned), file=sys.stderr)
+        for p, why in unscanned:
+            print("  %s (%s)" % (p, why), file=sys.stderr)
 
     all_findings = []
     redactions = {}
@@ -382,11 +453,17 @@ def main(argv=None):
                   "Run --mode report for detail." % (len(failing), fail_on, kinds),
                   file=sys.stderr)
             return 2
+        if unscanned:
+            print("PII gate: BLOCKED. %d path(s) not scanned (listed above)."
+                  % len(unscanned), file=sys.stderr)
+            return 3
         return 0
 
     if args.json:
         print(json.dumps({"findings": all_findings, "counts": counts,
-                          "fail_on": fail_on, "failing": len(failing)}, indent=2))
+                          "fail_on": fail_on, "failing": len(failing),
+                          "unscanned": [{"path": p, "reason": why} for p, why in unscanned]},
+                         indent=2))
     else:
         current = None
         for f in all_findings:
@@ -398,7 +475,11 @@ def main(argv=None):
         print("SUMMARY: %d finding(s) (%d high, %d medium, %d low), %d at/above %s"
               % (len(all_findings), counts["high"], counts["medium"], counts["low"],
                  len(failing), fail_on))
-    return 2 if failing else 0
+        if unscanned:
+            print("NOT SCANNED: %d path(s), named on stderr" % len(unscanned))
+    if failing:
+        return 2
+    return 3 if unscanned else 0
 
 
 if __name__ == "__main__":

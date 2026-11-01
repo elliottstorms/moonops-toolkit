@@ -1,5 +1,5 @@
 {
-  "_comment": "Copy to .pii-scan.json in the directory you scan. Allowlist entries use the object form so every exception carries its own audit trail.",
+  "_comment": "Save a copy and pass it with --config <path>: a path scan reads no config on its own. A --stdin scan (the hooks) also reads ./.pii-scan.json from the working directory. Allowlist entries use the object form so every exception carries its own audit trail.",
   "fail_on": "medium",
   "allowlist": [
     {
