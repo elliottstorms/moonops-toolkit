@@ -73,6 +73,9 @@ The verdict is the last `RESTORE DRILL:` line (exit code in brackets):
   Teach the drill the scope they come from.
 - `RESTORE DRILL: CANNOT RUN` (2): the drill could not read its copy rules out
   of `backup.sh`. Nothing was compared. Update the drill to match `backup.sh`.
+- `RESTORE DRILL: STOPPED` (70): the drill ended before its verdict, most
+  likely on an unset variable, so nothing it printed is a pass. Its error line
+  names where it stopped; fix that, then run the drill again.
 
 A privacy or embedded-media holdback is the guard working, not a gap.
 **Ruling A (you, 2026-09-25):** a file inside a `projects/` scope that git

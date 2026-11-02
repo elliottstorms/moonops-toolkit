@@ -15,7 +15,10 @@ REPO="your-username/your-backup-repo"
 #                 deliberately damaged clone can prove a missing or altered file is caught.
 BACKUP_SH="${BACKUP_SH:-$HOME/Claude/Toolkit/backup/backup.sh}"
 T=$(mktemp -d)
-trap 'rm -rf "$T"' EXIT
+# Under macOS sh (bash 3.2), a set -eu script with an EXIT trap that stops on an unset variable
+# exits 0, so a drill that stopped part way, having compared nothing, read as a pass
+# (2026-11-01). Only the verdict at the end marks the drill finished; any other exit 0 is 70.
+trap '_rd_rc=$?; rm -rf "$T"; if [ "$_rd_rc" -eq 0 ] && [ -z "${_rd_done:-}" ]; then echo "RESTORE DRILL: STOPPED: the drill ended before its verdict (an unset variable?), so nothing above is a pass (exit 70)"; exit 70; fi' EXIT
 : > "$T/.checked"   # every mirror path some check below covers, for the coverage check
 : > "$T/.tally"
 
@@ -783,4 +786,5 @@ fi
 if [ $((TOT_PII + TOT_EMB + TOT_OVER + TOT_IGN + TOT_PATH)) -gt 0 ]; then
   echo "  Kept out of the cloud copy on purpose: $TOT_PII file(s) held back by the privacy filter, $TOT_PATH held back by path, $TOT_EMB embedded-media page(s), $TOT_OVER file(s) over the size cap, $TOT_IGN file(s) skipped by a project's own ignore list (ruling A, 2026-09-25). Those come back only from a local backup such as Time Machine, never from this mirror."
 fi
-exit $RC
+# The verdict is in: this line marks the drill finished for the EXIT trap at the top.
+_rd_done=1; exit $RC

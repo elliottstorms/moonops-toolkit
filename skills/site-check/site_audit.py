@@ -13,7 +13,8 @@ Usage:
   python3 site_audit.py --repo <repo_root> --json       # machine-readable output
 
 Config: <repo_root>/.site-check.json  (see --init). The config is the contract:
-expected pages, nav items, required/forbidden strings, OG requirements.
+expected pages, nav items, required/forbidden strings, OG requirements, and
+forbidden patterns read from another file at every run (forbidden_patterns_from).
 
 Exit codes: 0 = pass (warnings allowed) · 2 = failures found · 3 = usage/config error
 """
@@ -219,6 +220,190 @@ def pdf_page_count(path):
         return None
 
 
+# Forbidden patterns read from another file at every run (2026-11-01). A config's
+# "forbidden_patterns_from" names a file and a shell variable in it that holds a POSIX ERE
+# in single quotes (NAME='a|b|c'), the way a build script keeps its term list, so this
+# audit and any other gate that reads the same list can never drift apart. The ERE is split
+# into its top-level alternatives, and each one becomes a Python pattern that matches the
+# way LC_ALL=C grep -iE does, line by line. Anything without a known equal meaning is
+# refused (exit 3), never guessed at. "allow" names, spelled exactly as in that file, the
+# alternatives this site may carry. "phrase_exceptions_file" names a file of exact,
+# case-sensitive phrases blanked out of each line before matching; a phrase that holds no
+# term the check looks for is not applied. Every text file under site_dir is read, not
+# only .html, because everything under it deploys. On a CI runner (CI=true) a missing
+# file is a warning instead, since such a file usually lives on one machine.
+ERE_CLASSES = {"alpha": "A-Za-z", "alnum": "A-Za-z0-9", "digit": "0-9", "upper": "A-Z",
+               "lower": "a-z", "space": " \\t\\n\\r\\f\\v"}
+ERE_ESCAPES = {"b": r"\b", "B": r"\B", "w": r"\w", "W": r"\W", "s": r"\s", "S": r"\S",
+               "d": r"\d", "D": r"\D", "<": r"\b(?=\w)", ">": r"\b(?<=\w)"}
+BINARY_PROBE = 32768  # bytes: a NUL among the first this many makes a file binary, as in grep -I
+
+
+def _ere_bracket(ere, i):
+    """Translate the bracket expression that opens at ere[i]: (end, pattern, error)."""
+    j, out = i + 1, "["
+    if ere[j:j + 1] == "^":
+        j, out = j + 1, out + "^"
+    start = j
+    while j < len(ere):
+        c = ere[j]
+        if c == "]" and j > start:
+            return j + 1, out + "]", None
+        if c == "[" and ere[j + 1:j + 2] in (":", ".", "="):
+            kind = ere[j + 1]
+            end = ere.find(kind + "]", j + 2)
+            name = ere[j + 2:end] if end > j else ""
+            if kind != ":" or name not in ERE_CLASSES:
+                return None, None, "the bracket item %r, which this check cannot translate" % (
+                    ere[j:end + 2] if end > j else ere[j:])
+            j, out = end + 2, out + ERE_CLASSES[name]
+            continue
+        # Inside brackets a POSIX backslash is a literal; [, &, ~ and | are escaped so
+        # Python never reads a nested set or a set operation.
+        out += "\\" + c if c in "\\[]^&~|" else c
+        j += 1
+    return None, None, "a bracket expression that never closes"
+
+
+def ere_alternatives(ere):
+    """Split a POSIX ERE into its top-level alternatives, each compiled as Python.
+    Returns ([(alternative as written, compiled pattern)], None) or (None, why)."""
+    parts, src, py, depth, quant, i = [], "", "", 0, False, 0
+    while i < len(ere):
+        c = tok = piece = ere[i]
+        is_quant = False
+        if c == "\\":
+            tok = ere[i:i + 2]
+            if tok[1:] in ERE_ESCAPES:
+                piece = ERE_ESCAPES[tok[1:]]
+            elif tok[1:] and not tok[1:].isalnum() and not tok[1:].isspace():
+                piece = tok
+            else:
+                return None, "the escape %r, which this check cannot translate" % tok
+        elif c == "[":
+            end, piece, err = _ere_bracket(ere, i)
+            if err:
+                return None, err
+            tok = ere[i:end]
+        elif c == "|" and depth == 0:
+            parts.append((src, py))
+            src, py, quant, i = "", "", False, i + 1
+            continue
+        elif c == "{":
+            m = re.match(r"\{\d+(,\d*)?\}", ere[i:])
+            if not m:
+                return None, "a { that does not open an interval such as {2} or {1,3}"
+            tok = piece = m.group(0)
+            is_quant = True
+        else:
+            if c == "(":
+                if ere[i + 1:i + 2] == "?":
+                    return None, "a group that opens with (?, which ERE does not have"
+                depth += 1
+            elif c == ")":
+                depth -= 1
+                if depth < 0:
+                    return None, "a ) with no ( before it"
+            is_quant = c in "*+?"
+        if is_quant and quant:
+            return None, "two quantifiers in a row (%r), which ERE and Python read differently" % (
+                src[-1:] + tok)
+        src, py, quant, i = src + tok, py + piece, is_quant, i + len(tok)
+    if depth:
+        return None, "a ( that never closes"
+    parts.append((src, py))
+    out = []
+    for s, p in parts:
+        if not s:
+            return None, "an empty alternative, which matches every line"
+        try:
+            rx = re.compile(p, re.I | re.A)
+        except re.error as e:
+            return None, "the alternative %r, which does not compile (%s)" % (s, e)
+        if rx.search(""):
+            return None, "the alternative %r, which matches an empty line and so every line" % s
+        out.append((s, rx))
+    return out, None
+
+
+def read_shell_ere(path, variable):
+    """The value of the first line NAME='...' in path, the way sed reads it: (value, error)."""
+    rx = re.compile(r"^%s='(.*)'.*$" % re.escape(variable))
+    try:
+        with open(path, encoding="utf-8", errors="replace") as f:
+            for line in f:
+                m = rx.match(line.rstrip("\n"))
+                if m:
+                    return m.group(1), None
+    except OSError as e:
+        return None, "cannot read %s (%s)" % (path, e)
+    return None, "no line %s='...' in %s" % (variable, path)
+
+
+def load_forbidden_patterns(spec, repo):
+    """Validate a forbidden_patterns_from block and read its patterns: (rules, error)."""
+    if not isinstance(spec, dict):
+        return None, "must be an object"
+    src, var = spec.get("file"), spec.get("variable")
+    allow, phrases_file = spec.get("allow", []), spec.get("phrase_exceptions_file")
+    if not isinstance(src, str) or not src:
+        return None, "'file' must name the file that holds the patterns"
+    if not isinstance(var, str) or not re.match(r"^[A-Za-z_][A-Za-z0-9_]*$", var):
+        return None, "'variable' must be a shell variable name"
+    if not isinstance(allow, list) or not all(isinstance(a, str) for a in allow):
+        return None, "'allow' must be a list of strings"
+    if phrases_file is not None and not (isinstance(phrases_file, str) and phrases_file):
+        return None, "'phrase_exceptions_file' must name a file"
+    path = os.path.join(repo, os.path.expanduser(src))
+    rules = {"file": path, "variable": var, "skipped": None}
+    if not os.path.exists(path) and os.environ.get("CI") == "true":
+        rules["skipped"] = ("%s is not on this machine (a CI runner), so its %s patterns "
+                            "were not checked on this run" % (src, var))
+        return rules, None
+    ere, err = read_shell_ere(path, var)
+    if err:
+        return None, err
+    if not ere:
+        return None, "%s in %s is empty" % (var, path)
+    alts, err = ere_alternatives(ere)
+    if err:
+        return None, "%s in %s has %s" % (var, path, err)
+    names = {a for a, _rx in alts}
+    rules["patterns"] = [(a, rx) for a, rx in alts if a not in allow]
+    rules["allowed"] = [a for a in allow if a in names]
+    rules["stale_allow"] = [a for a in allow if a not in names]
+    rules["phrases"] = []
+    if phrases_file:
+        pp = os.path.join(repo, os.path.expanduser(phrases_file))
+        try:
+            with open(pp, encoding="utf-8") as f:
+                rules["phrases"] = [ln.strip() for ln in f
+                                    if ln.strip() and not ln.lstrip().startswith("#")]
+        except (OSError, UnicodeDecodeError) as e:
+            return None, "cannot read the phrase exceptions in %s (%s)" % (pp, e)
+    return rules, None
+
+
+def site_files(site_dir):
+    """(relative path, text, error) for every file under site_dir. text is None for a
+    binary file, and for one that could not be read (error then says why)."""
+    for dirpath, dirs, files in os.walk(site_dir):
+        dirs[:] = sorted(d for d in dirs if d not in (".git", "node_modules"))
+        for name in sorted(files):
+            path = os.path.join(dirpath, name)
+            rel = os.path.relpath(path, site_dir)
+            try:
+                with open(path, "rb") as f:
+                    data = f.read()
+            except OSError as e:
+                yield rel, None, str(e)
+                continue
+            if b"\0" in data[:BINARY_PROBE]:
+                yield rel, None, None
+            else:
+                yield rel, data.decode("utf-8", errors="replace"), None
+
+
 def load_config(repo):
     """Return (cfg, error_message). Validates the contract's required shape."""
     cfg_path = os.path.join(repo, ".site-check.json")
@@ -238,6 +423,11 @@ def load_config(repo):
     site_dir = os.path.join(repo, cfg["site_dir"])
     if not os.path.isdir(site_dir):
         return None, "Config site_dir does not exist: %s" % site_dir
+    if "forbidden_patterns_from" in cfg:
+        rules, err = load_forbidden_patterns(cfg["forbidden_patterns_from"], repo)
+        if err:
+            return None, "Config %s: forbidden_patterns_from: %s" % (cfg_path, err)
+        cfg["_forbidden_patterns"] = rules
     return cfg, None
 
 
@@ -424,6 +614,47 @@ def run_audit(repo, cfg, live, wait, as_json, offline=False):
             for n in needles:
                 if n.lower() in content:
                     add(FAIL, "strings", "%s: FORBIDDEN string present: %r" % (page, n))
+    fpr = cfg.get("_forbidden_patterns")
+    if fpr and fpr["skipped"]:
+        add(WARN, "patterns", fpr["skipped"])
+    elif fpr:
+        label = "%s in %s" % (fpr["variable"], os.path.basename(fpr["file"]))
+        for a in fpr["stale_allow"]:
+            add(WARN, "patterns", "allow entry %r is no longer one of the patterns in %s; "
+                "remove it from the config" % (a, label))
+        phrases = [p for p in fpr["phrases"] if any(rx.search(p) for _a, rx in fpr["patterns"])]
+        for p in fpr["phrases"]:
+            if p not in phrases:
+                add(WARN, "patterns", "exception phrase %r holds no term the check looks for, "
+                    "so it is not applied" % p)
+        seen, ntext, binary = set(), 0, {}
+        for rel, text, err in site_files(site_dir):
+            if err:
+                add(FAIL, "patterns", "%s: could not be read, so it was not checked (%s)" % (rel, err))
+                continue
+            if text is None:
+                ext = os.path.splitext(rel)[1].lower() or "(no extension)"
+                binary[ext] = binary.get(ext, 0) + 1
+                continue
+            ntext += 1
+            for n, line in enumerate(text.split("\n"), 1):
+                for p in phrases:
+                    if p in line:
+                        seen.add(p)
+                        line = line.replace(p, " " * len(p))
+                for _a, rx in fpr["patterns"]:
+                    m = rx.search(line)
+                    if m:
+                        add(FAIL, "patterns", "%s:%d: a term from %s is present: %r" % (
+                            rel, n, label, m.group(0).strip()))
+        for p in phrases:
+            if p not in seen:
+                add(WARN, "patterns", "exception phrase %r is no longer on the site; "
+                    "remove it from its file" % p)
+        add(OK, "patterns", "%d text file(s) read against %d pattern(s) from %s (%d allowed by "
+            "name, %d exception phrase(s)); binary, not read: %s" % (
+                ntext, len(fpr["patterns"]), label, len(fpr["allowed"]), len(phrases),
+                ", ".join("%s %d" % kv for kv in sorted(binary.items())) or "none"))
 
     # ---- sitemap / robots ----
     sm = os.path.join(site_dir, "sitemap.xml")

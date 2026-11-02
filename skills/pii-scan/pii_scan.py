@@ -159,8 +159,14 @@ CREDENTIAL_PATTERNS = [
     ("private-key", "-----BEGIN " + r"([A-Z ]*)" + "PRIVATE KEY-----"
      + r"(?:[\s\S]{0,16384}?" + "-----END " + r"\1" + "PRIVATE KEY-----"
      + r"|(?:(?:\r?\n|\\n)[A-Za-z0-9+/=]{1,128})*)"),
-    ("password-assignment", r"(?i)\bpassword\s*[:=]\s*\S{6,}"),
+    # The label may end a longer name (2026-11-01): camelCase, run-together and env-style
+    # names (dbPassword, PGPASSWORD, DB_PASSWORD), a JSON member's closing quote
+    # ("password": "..."), and a label right after a \n escape. The \b before it refused
+    # every one of them. The colon or equals sign and the six-character value still keep
+    # prose out ("password reset", "passwords:").
+    ("password-assignment", r"(?i)password[\"']?\s*[:=]\s*\S{6,}"),
 ]
+CREDENTIAL_TYPES = {_name for _name, _pat in CREDENTIAL_PATTERNS}
 for _name, _pat in CREDENTIAL_PATTERNS:
     DETECTORS.append((_name, "high", 9, re.compile(_pat), lambda m, t: True))
 
@@ -248,19 +254,30 @@ def mask(kind, s):
 # original text, which the excerpts, the allowlist and redact mode read.
 APOSTROPHES = str.maketrans({"\u2018": "'", "\u2019": "'", "\u02bc": "'"})
 
+# JSON and percent escape tails, read as blanks (2026-11-01): a number or a label right
+# after "\n", "\t", "\u0022" or "%22" ran into the escape's last letter or digit, which
+# every pattern's leading boundary refuses, so a card or routing number in a raw tool-call
+# log or a URL-encoded body was never found (and "%22" lent the card its two digits). The
+# same escapes as the port's secrets pack (rp-engine#14). One character for one, as above.
+# The credential patterns read the text without this: a private key's \n lines and a
+# password value with an escape in it are theirs to match as written.
+ESCAPE_TAIL = re.compile(r"\\[nrtfvb]|\\u[0-9A-Fa-f]{4}|%[0-9A-Fa-f]{2}")
+
 
 def scan_text(text, detectors, allow, allow_rx):
     view = text.translate(APOSTROPHES)
+    blanked = ESCAPE_TAIL.sub(lambda e: " " * len(e.group(0)), view)
     raw = []
     for kind, conf, prio, rx, check in detectors:
-        for m in rx.finditer(view):
+        src = view if kind in CREDENTIAL_TYPES else blanked
+        for m in rx.finditer(src):
             val = text[m.start():m.end()]
             if val in allow:
                 continue
             if any(a.search(val) for a in allow_rx):
                 continue
             try:
-                if not check(m, view):
+                if not check(m, src):
                     continue
             except (ValueError, IndexError):
                 continue
@@ -347,8 +364,16 @@ def iter_files(paths, cfg, cfg_path, unscanned, skip_redacted=False):
 
 # --------------------------------------------------------------------- main
 
+class Parser(argparse.ArgumentParser):
+    """A usage error exits 3 (2026-11-01): argparse's own 2 is the findings code."""
+
+    def error(self, message):
+        self.print_usage(sys.stderr)
+        self.exit(3, "%s: error: %s\n" % (self.prog, message))
+
+
 def main(argv=None):
-    ap = argparse.ArgumentParser(
+    ap = Parser(
         description="Deterministic PII scanner. Exit 0 clean, 2 findings, "
                     "3 usage error or a path not scanned.")
     ap.add_argument("paths", nargs="*", help="files or directories to scan")

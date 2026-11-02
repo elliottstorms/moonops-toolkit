@@ -42,6 +42,28 @@ python3 ~/.claude/skills/site-check/site_audit.py --repo ~/Claude/Projects/moono
   (b) "bot-blocked domain" warnings for skip_domains (LinkedIn etc.). Fix warnings only
   when the user asks.
 
+## Forbidden patterns read from another file
+
+A config may also carry `forbidden_patterns_from` (2026-11-01). It names a file, the shell
+variable in it that holds a POSIX ERE in single quotes (`NAME='a|b'`), the alternatives this
+site may carry (`allow`, spelled exactly as in that file), and a file of exact, case-sensitive
+phrases blanked out of each line first (`phrase_exceptions_file`). The list is read on every
+run, so the audit and any other gate that reads the same list can never drift apart. It
+sweeps every text file under `site_dir`, not only `.html`, and its ✅ line counts the binary
+files it could not read.
+
+- A hit is ❌, with the file and line: fix the page. Never add an `allow` entry or an
+  exception phrase to get past a hit, and never remove the block. That is editing the
+  contract to pass (fixing rule 3), and a hit is the guard working.
+- A list it cannot read, or a pattern it cannot translate to the meaning grep gives it, exits
+  `3`. On a CI runner (`CI=true`) a missing file is a ⚠️ instead, since the file lives on one
+  machine; the pre-push hook still checks it there.
+- ⚠️ for an `allow` entry the list no longer has, or an exception phrase that is off the site
+  or holds no term: report them, since they mean the config can shrink.
+- In the moonops repo it reads the public build's DENY list (`build-public-toolkit.sh`), so
+  the site and the public toolkit share one term list. `tools/test_site_audit_deny.py` proves
+  the translation against grep and the audit's behavior; run it after any change here.
+
 ## If something is missing (hard rules)
 
 - **Config missing for the moonops repo → STOP.** Never run `--init` there: the config is

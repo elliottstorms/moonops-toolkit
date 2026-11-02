@@ -56,7 +56,9 @@ hooks) also reads `./.pii-scan.json` from the working directory. See
 - `custom_patterns`: institution-specific formats (member-number layouts,
   internal ticket IDs) with a name and confidence. Every pattern, these
   included, reads a curly apostrophe (U+2018, U+2019 or U+02BC) as a straight
-  one, so spell an apostrophe in a pattern as `'`.
+  one, so spell an apostrophe in a pattern as `'`. Every pattern but the
+  credential ones also reads a JSON or percent escape (`\n`, `\t`, `\u0022`,
+  `%22`) as blanks, so a value right after one is still found.
 - `fail_on`: default threshold (`low` | `medium` | `high`).
 - `exclude_paths`: regex fragments for paths to skip on purpose. An excluded
   path is not reported, so this is also where you acknowledge, by name, a file
