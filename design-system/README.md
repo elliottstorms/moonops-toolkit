@@ -115,6 +115,18 @@ button, body text or anything else is a veto.
    per tile; the badge (Poppins Medium 40) and the MOONOPS wordmark (Poppins Medium 34) are chrome,
    not copy, and are not counted or measured against the headline floor. Record:
    `moonops-rain/council/RULING_2026-09-06_aria-thumbnail-text-gates.md`.
+   **The moon and the headline keep a clear gap (Owner rule, 2026-11-13, her words: "the spacing
+   of the bottom of the moon and the title on the thumbnails is too close").** At 1280x720, at
+   least 56 px of empty rows sit between the crescent's lowest lit pixel and the top of the
+   headline, its drop shadow included, over every column the two share. The room comes from two
+   small moves together: the crescent shrinks with its top edge kept (radius 180 px at the least)
+   and the headline slides down (24 px at the most) at its searched size. The headline shrinks a
+   step only when those two cannot make room, and a tile that still cannot keep the gap is refused,
+   never written. Enforced in `moonops-rain/make_thumb_v2.py` (`text_layout`, `HEADLINE_CLEAR_PX`;
+   `--old-placement` rebuilds a tile made before the rule exactly as it was) and read on any
+   finished tile by `moonops-rain/scripts/measure_headline_gap.py`. On 2026-11-13, 46 of the 50
+   video tiles on the channel and all five live stream tiles sat under the gap, none changed
+   (`moonops-rain/out/fire_2026-11/tiles/rev_2026-11-13/catalogue_gap_sweep_2026-11-13.json`).
 7. **Nothing lit appears on screen between the blackout and the dawn reveal, platform overlays
    included** (the design lead's proposal, approved by you 2026-09-12). The dark room is the product, so
    the rule binds anything we control that can draw over the black hours: the video watermark,
