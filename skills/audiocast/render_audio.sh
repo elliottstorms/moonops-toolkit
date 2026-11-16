@@ -91,7 +91,9 @@ OUTBASE="${OUT%.*}"
 
 WORKDIR="$(mktemp -d "${TMPDIR:-/tmp}/audiocast.XXXXXX")"
 cleanup() { if [ -n "${WORKDIR:-}" ] && [ -d "$WORKDIR" ]; then rm -rf "$WORKDIR"; fi; }
-trap cleanup EXIT
+# bash 3.2 exits 0 when set -u stops the script under an EXIT trap, so a run that
+# stopped part way could look like success. _ra_done marks a real finish.
+trap '_ra_rc=$?; cleanup; if [ "$_ra_rc" -eq 0 ] && [ -z "${_ra_done:-}" ]; then echo "render_audio: STOPPED before it finished (an unset variable?), so it exits 70, not 0" >&2; exit 70; fi' EXIT
 
 report() {
   local f="$1" dur size mmss=""
@@ -469,39 +471,39 @@ try_piper() {
 # ── engine chain ─────────────────────────────────────────────
 case "$WANT_ENGINE" in
   eleven)
-    try_eleven && exit 0
+    try_eleven && { _ra_done=1; exit 0; }
     if [ "$VOICE_FROM_FILE" -eq 1 ]; then
       echo "[elevenlabs] default voice could not render, falling through to the standard chain (edge-tts Ava first)." >&2
       VOICE=""; EL_VOICE_ID=""
-      try_edge && exit 0
-      try_say && exit 0
-      try_piper && exit 0
+      try_edge && { _ra_done=1; exit 0; }
+      try_say && { _ra_done=1; exit 0; }
+      try_piper && { _ra_done=1; exit 0; }
     else
       echo "error: -v '$VOICE' requested but ElevenLabs could not render it (see messages above)." >&2
       exit 1
     fi
     ;;
   edge)
-    try_edge && exit 0
+    try_edge && { _ra_done=1; exit 0; }
     echo "error: -v '$VOICE' is a neural voice but edge-tts could not render it." >&2
     exit 1
     ;;
   say)
-    try_say && exit 0
+    try_say && { _ra_done=1; exit 0; }
     echo "error: -v '$VOICE' requested but macOS 'say' is unavailable." >&2
     exit 1
     ;;
   offline)
     # --offline: local engines only, the text never leaves this machine.
-    try_say && exit 0
-    try_piper && exit 0
+    try_say && { _ra_done=1; exit 0; }
+    try_piper && { _ra_done=1; exit 0; }
     echo "error: --offline requested but no local TTS engine is available." >&2
     exit 1
     ;;
   *)
-    try_edge && exit 0
-    try_say && exit 0
-    try_piper && exit 0
+    try_edge && { _ra_done=1; exit 0; }
+    try_say && { _ra_done=1; exit 0; }
+    try_piper && { _ra_done=1; exit 0; }
     ;;
 esac
 
