@@ -22,6 +22,11 @@
   --ink2: #141f3d;       /* recessed fill between ink and card: timeline dots, the human marker disc, the turntable disc gradient (ttmoon) mid stop, all on the home page. Declared in the page :root blocks since the 2026-07-03 repo import; tokenized 2026-09-29, pixel-identical. Near-twin of --grad-mid; merging the two would move live pixels, so it waits for a redesign */
   --green-glint: #f4fff9; /* the one highlight stop in the .shine sweep across green section labels (since 2026-09-23); never a fill, border, or text colour on its own */
   --steel-glint: #f1f4fb; /* same sweep on steel text (the home page footer label only); same limits as --green-glint */
+  --rule: #222c43;       /* hairline between blocks on moonops.org since the classic pass (2026-11-19): it replaced the boxed cards. A border colour only */
+  --rule-2: #303a52;     /* the stronger hairline, same scope (share cards, emphasised dividers) */
+  --star-core: #fffaf5;  /* the lit centre of the four-point star (listening case study, share cards); never a text or fill colour elsewhere */
+  --star-cream: #ffe2c4; /* the sky's warm star (STAR_CREAM in the video pipeline): site/sky.js and thumbnails only; never text, never a fill */
+  --star-rose: #ffbac4;  /* the sky's rose star (STAR_ROSE), about a third of the field; same limits */
 
   /* ---- type ---- */
   --font-display: 'Poppins', sans-serif;      /* headings, hero, buttons */

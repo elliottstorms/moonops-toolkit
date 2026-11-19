@@ -24,6 +24,37 @@ quieter option wins. the design lead (CCO) holds the veto on channel work; on we
 | `--text-lead` / `--text-body` | `#cdd6e8` / `#dbe2f0` | Lead and long-form text tints on gradient pages (between steel and cream). |
 | `--grad-mid` / `--grad-deep` | `#131d3a` / `#1a1c44` | The body gradient's mid and deepest stops (with `--ink` at the ends). |
 
+**Classic pass (Owner ruling 2026-11-19, live on moonops.org the same day; where this block and an
+older line below disagree about moonops.org, this block wins).** you asked for the site to be
+"classy/classic" and cleared of the common AI design tells, approved the before and after of every
+page, and gave the ship words. On moonops.org:
+- Type is Poppins throughout. No mono face, no ALL CAPS labels, no `//` or `>` code-style prefixes,
+  no negative letter-spacing, no full stop closing a title. The label shimmer exception of
+  2026-09-23 is retired with the labels it applied to.
+- Surfaces are flat: one ink ground (no body gradient), hairline rules in place of boxed cards
+  (`--rule`, `--rule-2`), plain text in place of pills. The Lab page keeps its cards, night sky and
+  layout; the home page soundtrack keeps its record, pills and spin.
+- Motion: no hover lift, no rise-in on scroll, no count-up, no typing prompt. Links and buttons
+  still change colour on hover. What moves: the record, the nav moon as the page scrolls, and the
+  site sky (next item). Each rests under `prefers-reduced-motion` and on the footer's "pause motion".
+- The sky (Owner, later the same day, after seeing the classic pass live: "its also not exciting ...
+  bring some of our beautiful stars like the ones in this thumbnail into the background of the site
+  and have them twinkle a bit", then "now we're talkin"). Every page, the Lab included, carries the
+  thumbnail's own starfield, drawn by `site/sky.js` from the recipe in `make_thumb_v2.py`
+  (`_starfield`): `--star-cream` and `--star-rose`, three sizes, a soft four-point sparkle on the
+  brightest. The script measures where the page's words and pictures are and lays the stars only in
+  the open space around them, so no star sits behind text. The brightest twinkle, a faint far layer
+  drifts with the scroll, and one shooting star crosses about once a minute, head first. The star
+  colours are for stars only: never text, never a fill. An earlier same-day version (thirty-three
+  stars on the listening case study only) is retired; she prefers the thumbnail's stars.
+- Green is the label and data accent again (Owner, same day: "I didnt realize all the neon green
+  color was gone", then "were you planning on any more green?"): small labels, dates, outcome
+  numbers, the home page's three headline numbers and its arrows. The classic pass had turned these
+  grey, which was a mistake of the pass and not a ruling. Purple still leads the first screen of every page (measured at the brand gate; further down, a run of green labels may outnumber it, which she accepted with this ruling); green is
+  never a button, a call to action or a large fill.
+The mono face, the `// eyebrow` cue and the hover lift described below remain the rule for tool UIs
+and dashboards only. Text before this amendment: `archive/README.pre-classic-pass-2026-11-19.md`.
+
 **Type:** Poppins for display and body; JetBrains Mono for eyebrows, labels, and data;
 Georgia only for pull quotes. The `// eyebrow` mono label is the signature cue, and it earns its place: it sits above a
 heading only when it adds something the heading lacks (a live state, a dated fact, a place in a
